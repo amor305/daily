@@ -29,7 +29,7 @@
     .search-bar input{flex:1;outline:none;font-size:14px;background:transparent;border:none;color:var(--t1)}
     .entry-card{width:100%;text-align:left;padding:16px;border-radius:16px;background:var(--card);box-shadow:var(--shadow);margin-bottom:8px;transition:transform .15s}
     .entry-card:active{transform:scale(.98)}
-    .textarea-main{width:100%;resize:none;outline:none;font-size:16px;font-weight:300;line-height:2;border-radius:16px;padding:20px;background:var(--card);border:1px solid var(--border);color:var(--t1);box-shadow:var(--shadow);min-height:200px}
+    .textarea-main{width:100%;resize:none;outline:none;font-size:16px;font-weight:300;line-height:2;border-radius:16px;padding:20px;background:var(--card);border:1px solid var(--border);color:var(--t1);box-shadow:var(--shadow);min-height:120px;overflow:hidden}
     .btn-primary{padding:16px;border-radius:16px;font-size:14px;background:var(--accent);color:#fff;width:100%}
     .btn-secondary{padding:16px;border-radius:16px;font-size:14px;background:var(--card);border:1px solid var(--border);color:var(--t2);box-shadow:var(--shadow);width:100%}
     .btn-save{padding:10px 24px;border-radius:999px;font-size:14px}
@@ -43,7 +43,7 @@
 <body>
 <div id="root"></div>
 <script type="text/babel">
-const{useState,useEffect,useMemo}=React;
+const{useState,useEffect,useMemo,useCallback}=React;
 
 const store={
   get(k){try{const v=localStorage.getItem(k);return v?JSON.parse(v):null}catch(e){return null}},
@@ -61,10 +61,8 @@ const getDateKey=(d)=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0
 const formatDate=(key)=>{const[y,m,d]=key.split('-');return`${y}年${parseInt(m)}月${parseInt(d)}日`};
 
 const defaultEntries={
-  '2026-04-05':{text:'傍晚出门散步，看到路边的樱花已经开了大半。风一吹，花瓣落了一地。站在那看了很久，什么也没想。',mood:0,fragments:[{text:'樱花开了',time:'17:40'}]},
   '2026-04-10':{text:'今天去了一家很安静的咖啡店，窗边有一束光刚好落在桌上。点了一杯热拿铁，什么也没做，就坐着看外面的人来人往。',mood:6,fragments:[{text:'窗边的光很好看',time:'14:20'}]},
-  '2026-04-13':{text:'和朋友聊了很久，说到小时候的事情。原来我们记得的细节完全不一样，同一件事在各自的记忆里变成了不同的故事。记忆真的很不可靠，但也因此很有趣。',mood:1,fragments:[{text:'朋友说的那句话很有意思',time:'19:45'},{text:'原来那件事她完全不记得了',time:'20:10'}]},
-  '2026-04-16':{text:'下班路上下了一场小雨。没带伞，但也不想躲，就慢慢走回去了。到家的时候头发湿了，但心情意外地轻松。有时候淋一场雨也挺好的。',mood:6,fragments:[{text:'雨后的空气真好闻',time:'18:30'},{text:'鞋子湿了但无所谓',time:'18:50'}]}
+  '2026-04-16':{text:'下班路上下了一场小雨。没带伞，但也不想躲，就慢慢走回去了。到家的时候头发湿了，但心情意外地轻松。有时候淋一场雨也挺好的。',mood:6,fragments:[{text:'雨后的空气真好闻',time:'18:30'}]}
 };
 
 function DiaryApp(){
@@ -86,6 +84,15 @@ function DiaryApp(){
   const[showExportModal,setShowExportModal]=useState(false);
 
   useEffect(()=>{store.set('diary-data',entries)},[entries]);
+
+  const autoResize=(e)=>{e.target.style.height='auto';e.target.style.height=e.target.scrollHeight+'px'};
+  const textareaRef=useCallback((el)=>{if(el){el.style.height='auto';el.style.height=Math.max(el.scrollHeight,120)+'px'}},[]);
+
+  const hasSampleEntries=Object.keys(defaultEntries).some(k=>entries[k]&&entries[k].text===defaultEntries[k].text);
+  const clearSamples=()=>{
+    const dks=Object.keys(defaultEntries);
+    setEntries(prev=>{const next={...prev};dks.forEach(k=>{if(next[k]&&next[k].text===defaultEntries[k].text)delete next[k]});return next});
+  };
 
   const today=new Date();
   const todayKey=getDateKey(today);
@@ -234,7 +241,7 @@ function DiaryApp(){
           ))}
         </div>
       </div>
-      <textarea className="textarea-main" value={text} onChange={e=>setText(e.target.value)} placeholder="写点什么吧，长短都好..." autoFocus/>
+      <textarea className="textarea-main" ref={textareaRef} value={text} onChange={e=>setText(e.target.value)} onInput={autoResize} placeholder="写点什么吧，长短都好..." autoFocus/>
       <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginTop:20}}>
         <span style={{fontSize:12,color:'var(--t3)'}}>{text.length>0?`${text.length} 字`:''}</span>
         <button className="btn-save" onClick={handleSave}
@@ -311,6 +318,12 @@ function DiaryApp(){
         </div>
         <div style={{marginTop:40}}>
           <p style={{fontSize:12,letterSpacing:2,color:'var(--t3)',marginBottom:16}}>{filteredEntryKeys!==null?'搜索结果':'最近的日记'}</p>
+          {hasSampleEntries&&filteredEntryKeys===null&&(
+            <div style={{padding:16,borderRadius:12,background:'var(--accent-bg)',marginBottom:16,lineHeight:1.8}}>
+              <p style={{fontSize:13,color:'var(--accent)'}}>👋 以下包含示例日记，帮助你了解功能。日记只保存在你自己的浏览器中。</p>
+              <button onClick={clearSamples} style={{fontSize:12,color:'var(--accent)',marginTop:8,textDecoration:'underline'}}>清除示例，开始自己记录</button>
+            </div>
+          )}
           {listKeys.length===0&&<p style={{textAlign:'center',fontSize:14,color:'var(--t3)',padding:'32px 0'}}>{filteredEntryKeys!==null?'没有找到相关内容':'还没有日记，去写一篇吧'}</p>}
           {listKeys.map(key=>{
             const e=entries[key];if(!e)return null;
@@ -370,7 +383,7 @@ function DiaryApp(){
               style={{flex:1,outline:'none',fontSize:14,padding:'10px 16px',borderRadius:12,background:'var(--card)',border:'1px solid var(--border)',color:'var(--t1)'}}/>
             <button onClick={addEditFragment} style={{padding:'10px 12px',borderRadius:12,fontSize:12,background:'var(--accent-bg)',color:'var(--accent)',flexShrink:0}}>添加</button>
           </div>
-          <textarea className="textarea-main" value={editText} onChange={e=>setEditText(e.target.value)}/>
+          <textarea className="textarea-main" ref={textareaRef} value={editText} onChange={e=>setEditText(e.target.value)} onInput={autoResize}/>
           <p style={{fontSize:12,color:'var(--t3)',textAlign:'center',marginTop:12}}>清空所有内容并保存将删除这篇日记</p>
         </div>
       );
