@@ -1,442 +1,393 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>心情日记</title>
-  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script src="https://unpkg.com/@babel/standalone@7/babel.min.js"></script>
-  <style>
-    :root{--bg:#f8f6f1;--card:#fff;--t1:#2c2a27;--t2:#7a7672;--t3:#b5b0a9;--accent:#7c9a82;--accent-bg:#eef3ef;--border:#e8e4de;--shadow:0 1px 4px rgba(44,42,39,0.05)}
-    *{margin:0;padding:0;box-sizing:border-box}
-    body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Noto Sans SC",sans-serif;background:var(--bg);color:var(--t1);min-height:100vh;-webkit-font-smoothing:antialiased}
-    button{cursor:pointer;border:none;background:none;font-family:inherit;-webkit-tap-highlight-color:transparent}
-    input,textarea{font-family:inherit}
-    @keyframes fadeSlideIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-    @keyframes fadeIn{from{opacity:0}to{opacity:1}}
-    @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
-    .animate-in{animation:fadeSlideIn .25s ease}
-    .overlay-bg{animation:fadeIn .2s ease}
-    .modal-sheet{animation:slideUp .3s cubic-bezier(.25,.1,.25,1)}
-    .nav{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:space-around;align-items:center;padding:12px 0;background:var(--bg);border-top:1px solid var(--border);z-index:10}
-    .nav-item{display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 16px;font-size:12px}
-    .page{max-width:560px;margin:0 auto;padding:0 24px}
-    .cal-grid{display:grid;grid-template-columns:repeat(7,1fr)}
-    .cal-cell{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:12px 0}
-    .mood-chip{padding:6px 12px;border-radius:999px;font-size:12px;transition:all .15s}
-    .search-bar{display:flex;align-items:center;gap:8px;padding:10px 16px;border-radius:12px;background:var(--card);border:1px solid var(--border)}
-    .search-bar input{flex:1;outline:none;font-size:14px;background:transparent;border:none;color:var(--t1)}
-    .entry-card{width:100%;text-align:left;padding:16px;border-radius:16px;background:var(--card);box-shadow:var(--shadow);margin-bottom:8px;transition:transform .15s}
-    .entry-card:active{transform:scale(.98)}
-    .textarea-main{width:100%;resize:none;outline:none;font-size:16px;font-weight:300;line-height:2;border-radius:16px;padding:20px;background:var(--card);border:1px solid var(--border);color:var(--t1);box-shadow:var(--shadow);min-height:200px}
-    .btn-primary{padding:16px;border-radius:16px;font-size:14px;background:var(--accent);color:#fff;width:100%}
-    .btn-secondary{padding:16px;border-radius:16px;font-size:14px;background:var(--card);border:1px solid var(--border);color:var(--t2);box-shadow:var(--shadow);width:100%}
-    .btn-save{padding:10px 24px;border-radius:999px;font-size:14px}
-    .overlay{position:fixed;inset:0;z-index:50;display:flex;align-items:flex-end;justify-content:center}
-    .overlay-mask{position:absolute;inset:0;background:rgba(44,42,39,.25)}
-    .modal{position:relative;width:100%;max-width:500px;border-radius:24px 24px 0 0;padding:24px 24px 40px;background:var(--bg)}
-    .modal-handle{width:32px;height:4px;border-radius:4px;background:var(--border);margin:0 auto 24px}
-    .fragment-item{display:flex;gap:12px;padding:16px;border-radius:12px;background:var(--card);box-shadow:var(--shadow);margin-bottom:8px}
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>心情日记</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone@7/babel.min.js"></script>
+    <style>
+        :root{--bg:#f8f6f1;--card:#fff;--t1:#2c2a27;--t2:#7a7672;--t3:#b5b0a9;--accent:#7c9a82;--accent-bg:#eef3ef;--border:#e8e4de}
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Noto Sans SC",sans-serif;background:var(--bg);color:var(--t1);min-height:100vh;max-width:500px;margin:0 auto}
+        .app{padding-bottom:80px;min-height:100vh}
+        .bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:500px;background:#fff;border-top:1px solid var(--border);display:flex;justify-content:space-around;padding:8px 0 20px;z-index:100}
+        .nav-item{display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:none;color:var(--t3);font-size:11px;cursor:pointer;padding:4px 16px}
+        .nav-item.active{color:var(--accent)}
+        .nav-item .icon{font-size:22px}
+        .header{padding:20px 24px 0}
+        .greeting{font-size:22px;font-weight:600;margin-bottom:4px}
+        .date-str{font-size:13px;color:var(--t3)}
+        .prompt-card{margin:20px 24px;padding:16px;background:var(--accent-bg);border-radius:12px;font-size:14px;color:var(--t2);line-height:1.6}
+        .fragment-section{margin:0 24px 20px}
+        .fragment-title{font-size:13px;color:var(--t3);margin-bottom:10px}
+        .fragment-input-row{display:flex;gap:8px;margin-bottom:12px}
+        .fragment-input-row input{flex:1;padding:10px 14px;border:1px solid var(--border);border-radius:20px;font-size:14px;outline:none;background:#fff}
+        .fragment-input-row input:focus{border-color:var(--accent)}
+        .fragment-input-row button{padding:10px 18px;background:var(--accent);color:#fff;border:none;border-radius:20px;font-size:14px;cursor:pointer;white-space:nowrap}
+        .fragment-list{display:flex;flex-direction:column;gap:6px}
+        .fragment-item{padding:10px 14px;background:#fff;border-radius:10px;font-size:13px;color:var(--t2);border:1px solid var(--border)}
+        .fragment-item .time{color:var(--t3);margin-right:8px;font-size:12px}
+        .write-link{display:block;text-align:center;margin:16px 24px;padding:12px;color:var(--accent);font-size:14px;cursor:pointer}
+        .section-title{font-size:13px;color:var(--t3);margin:0 24px 10px}
+        .mood-row{display:flex;gap:10px;padding:0 24px;overflow-x:auto;margin-bottom:20px}
+        .mood-btn{display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 12px;background:#fff;border:2px solid var(--border);border-radius:12px;cursor:pointer;min-width:60px;font-size:11px;color:var(--t2)}
+        .mood-btn.selected{border-color:var(--accent);background:var(--accent-bg)}
+        .mood-btn .emoji{font-size:24px}
+        .entry-list{padding:0 24px}
+        .entry-card{padding:14px;background:#fff;border-radius:12px;margin-bottom:10px;border:1px solid var(--border);cursor:pointer}
+        .entry-card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+        .entry-card-date{font-size:13px;color:var(--t3)}
+        .entry-card-mood{font-size:18px}
+        .entry-card-text{font-size:14px;color:var(--t2);line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+        .write-view{padding:20px 24px}
+        .write-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+        .back-btn{background:none;border:none;font-size:14px;color:var(--t2);cursor:pointer}
+        .save-btn{padding:8px 20px;background:var(--accent);color:#fff;border:none;border-radius:20px;font-size:14px;cursor:pointer}
+        .write-date{font-size:14px;color:var(--t2)}
+        .write-textarea{width:100%;min-height:200px;padding:16px;border:1px solid var(--border);border-radius:12px;font-size:15px;line-height:1.8;resize:none;outline:none;background:#fff;font-family:inherit;margin-bottom:16px}
+        .write-textarea:focus{border-color:var(--accent)}
+        .saved-toast{text-align:center;color:var(--accent);font-size:13px;margin-top:8px}
+        .calendar-view{padding:20px 24px}
+        .cal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+        .cal-header h2{font-size:18px}
+        .cal-nav{background:none;border:none;font-size:20px;cursor:pointer;color:var(--t2);padding:4px 8px}
+        .cal-weekdays{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-size:12px;color:var(--t3);margin-bottom:8px}
+        .cal-days{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+        .cal-day{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:10px;font-size:13px;cursor:pointer;border:none;background:none;color:var(--t1);gap:2px}
+        .cal-day.empty{pointer-events:none}
+        .cal-day.today{background:var(--accent-bg);font-weight:600}
+        .cal-day.has-entry{background:#fff;border:1px solid var(--border)}
+        .cal-day .cal-emoji{font-size:12px}
+        .detail-view{padding:20px 24px}
+        .detail-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+        .detail-mood{font-size:32px;margin-bottom:16px;text-align:center}
+        .detail-text{font-size:15px;line-height:1.8;white-space:pre-wrap;margin-bottom:20px}
+        .detail-fragments-title{font-size:13px;color:var(--t3);margin-bottom:8px;margin-top:16px}
+        .export-view{padding:20px 24px}
+        .export-btn{display:block;width:100%;padding:14px;margin-bottom:10px;background:#fff;border:1px solid var(--border);border-radius:12px;font-size:14px;cursor:pointer;color:var(--t1)}
+        .export-btn:hover{border-color:var(--accent)}
+        .search-bar{margin:16px 24px}
+        .search-bar input{width:100%;padding:10px 16px;border:1px solid var(--border);border-radius:20px;font-size:14px;outline:none;background:#fff}
+        .search-bar input:focus{border-color:var(--accent)}
+        .no-entry{text-align:center;color:var(--t3);font-size:14px;padding:40px 0}
+        .edit-btn{background:none;border:1px solid var(--accent);color:var(--accent);padding:6px 16px;border-radius:16px;font-size:13px;cursor:pointer}
+    </style>
 </head>
 <body>
 <div id="root"></div>
 <script type="text/babel">
-const{useState,useEffect,useMemo}=React;
+const { useState, useEffect, useMemo, useCallback } = React;
 
-const store={
-  get(k){try{const v=localStorage.getItem(k);return v?JSON.parse(v):null}catch(e){return null}},
-  set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
-};
-
-const moods=[
-  {emoji:'😌',label:'平静'},{emoji:'😊',label:'开心'},{emoji:'😔',label:'低落'},
-  {emoji:'😤',label:'烦躁'},{emoji:'🥱',label:'疲惫'},{emoji:'🤔',label:'思考'},
-  {emoji:'🥰',label:'温暖'},{emoji:'😶',label:'说不清'}
+const moods = [
+    { emoji: "😊", label: "平静" },
+    { emoji: "😄", label: "开心" },
+    { emoji: "😢", label: "低落" },
+    { emoji: "😤", label: "烦躁" },
+    { emoji: "😴", label: "疲惫" },
+    { emoji: "🤔", label: "思考" },
+    { emoji: "🥰", label: "温暖" },
+    { emoji: "😶", label: "说不清" },
 ];
 
-const prompts=["今天，有什么想对自己说的吗","此刻的你，感觉怎么样","今天有什么小事让你停了一下","如果用一个词形容今天，会是什么"];
-const getDateKey=(d)=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-const formatDate=(key)=>{const[y,m,d]=key.split('-');return`${y}年${parseInt(m)}月${parseInt(d)}日`};
+const prompts = [
+    "今天，有什么想对自己说的吗",
+    "此刻的你，感觉怎么样",
+    "今天有什么小事让你停了一下",
+    "如果用一个词形容今天，会是什么",
+];
 
-const defaultEntries={
-  '2026-04-05':{text:'傍晚出门散步，看到路边的樱花已经开了大半。风一吹，花瓣落了一地。站在那看了很久，什么也没想。',mood:0,fragments:[{text:'樱花开了',time:'17:40'}]},
-  '2026-04-10':{text:'今天去了一家很安静的咖啡店，窗边有一束光刚好落在桌上。点了一杯热拿铁，什么也没做，就坐着看外面的人来人往。',mood:6,fragments:[{text:'窗边的光很好看',time:'14:20'}]},
-  '2026-04-13':{text:'和朋友聊了很久，说到小时候的事情。原来我们记得的细节完全不一样，同一件事在各自的记忆里变成了不同的故事。记忆真的很不可靠，但也因此很有趣。',mood:1,fragments:[{text:'朋友说的那句话很有意思',time:'19:45'},{text:'原来那件事她完全不记得了',time:'20:10'}]},
-  '2026-04-16':{text:'下班路上下了一场小雨。没带伞，但也不想躲，就慢慢走回去了。到家的时候头发湿了，但心情意外地轻松。有时候淋一场雨也挺好的。',mood:6,fragments:[{text:'雨后的空气真好闻',time:'18:30'},{text:'鞋子湿了但无所谓',time:'18:50'}]}
-};
+const getDateKey = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const formatDate = (key) => { const [y,m,d] = key.split('-'); return `${y}年${parseInt(m)}月${parseInt(d)}日`; };
 
-function DiaryApp(){
-  const[view,setView]=useState('home');
-  const[entries,setEntries]=useState(()=>store.get('diary-data')||defaultEntries);
-  const[text,setText]=useState('');
-  const[selectedMood,setSelectedMood]=useState(null);
-  const[fragments,setFragments]=useState([]);
-  const[fragmentInput,setFragmentInput]=useState('');
-  const[calMonth,setCalMonth]=useState(()=>new Date());
-  const[viewingDate,setViewingDate]=useState(null);
-  const[saved,setSaved]=useState(false);
-  const[searchQuery,setSearchQuery]=useState('');
-  const[isEditing,setIsEditing]=useState(false);
-  const[editText,setEditText]=useState('');
-  const[editMood,setEditMood]=useState(null);
-  const[editFragments,setEditFragments]=useState([]);
-  const[editFragmentInput,setEditFragmentInput]=useState('');
-  const[showExportModal,setShowExportModal]=useState(false);
+const loadEntries = () => { try { const s = localStorage.getItem('diaryEntries'); return s ? JSON.parse(s) : {}; } catch { return {}; } };
 
-  useEffect(()=>{store.set('diary-data',entries)},[entries]);
+function DiaryApp() {
+    const [view, setView] = useState('home');
+    const [entries, setEntries] = useState(loadEntries);
+    const [text, setText] = useState('');
+    const [selectedMood, setSelectedMood] = useState(null);
+    const [fragments, setFragments] = useState([]);
+    const [fragmentInput, setFragmentInput] = useState('');
+    const [calMonth, setCalMonth] = useState(() => new Date());
+    const [viewingDate, setViewingDate] = useState(null);
+    const [saved, setSaved] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
+    const [editText, setEditText] = useState('');
+    const [editMood, setEditMood] = useState(null);
+    const [editFragments, setEditFragments] = useState([]);
+    const [editFragmentInput, setEditFragmentInput] = useState('');
+    const [searchQuery, setSearchQuery] = useState('');
 
-  const today=new Date();
-  const todayKey=getDateKey(today);
-  const weekdays=['日','一','二','三','四','五','六'];
-  const dateStr=`${today.getMonth()+1}月${today.getDate()}日`;
-  const dayStr=`星期${weekdays[today.getDay()]}`;
-  const prompt=useMemo(()=>prompts[Math.floor(Math.random()*prompts.length)],[]);
+    const today = new Date();
+    const todayKey = getDateKey(today);
+    const weekdays = ['日','一','二','三','四','五','六'];
+    const dateStr = `${today.getMonth()+1}月${today.getDate()}日`;
+    const dayStr = `星期${weekdays[today.getDay()]}`;
+    const prompt = useMemo(() => prompts[Math.floor(Math.random()*prompts.length)], []);
 
-  const getGreeting=()=>{const h=today.getHours();if(h<6)return'夜深了';if(h<12)return'早上好';if(h<14)return'中午好';if(h<18)return'下午好';if(h<22)return'晚上好';return'夜深了'};
+    const getGreeting = () => { const h = today.getHours(); if(h<6) return '夜深了'; if(h<12) return '早上好'; if(h<14) return '中午好'; if(h<18) return '下午好'; if(h<22) return '晚上好'; return '夜深了'; };
 
-  const calYear=calMonth.getFullYear();
-  const calMon=calMonth.getMonth();
-  const daysInMonth=new Date(calYear,calMon+1,0).getDate();
-  const firstDay=new Date(calYear,calMon,1).getDay();
-  const calDays=[];
-  for(let i=0;i<firstDay;i++)calDays.push(null);
-  for(let i=1;i<=daysInMonth;i++)calDays.push(i);
+    // 页面加载时读取今天的数据
+    useEffect(() => {
+        const e = entries[todayKey];
+        if (e) { setText(e.text||''); setSelectedMood(e.mood??null); setFragments(e.fragments||[]); }
+        else { setText(''); setSelectedMood(null); setFragments([]); }
+    }, [todayKey]);
 
-  const filteredEntryKeys=useMemo(()=>{
-    if(!searchQuery.trim())return null;
-    const q=searchQuery.toLowerCase();
-    return Object.keys(entries).filter(key=>{
-      const e=entries[key];
-      if(e.text&&e.text.toLowerCase().includes(q))return true;
-      if(e.fragments?.some(f=>f.text.toLowerCase().includes(q)))return true;
-      if(e.mood!=null&&moods[e.mood].label.includes(q))return true;
-      return false;
-    });
-  },[searchQuery,entries]);
+    // ★ 关键修复：entries 变化时自动保存到 localStorage
+    useEffect(() => {
+        localStorage.setItem('diaryEntries', JSON.stringify(entries));
+    }, [entries]);
 
-  const startWrite=()=>{
-    const existing=entries[todayKey];
-    if(existing){setText(existing.text||'');setSelectedMood(existing.mood??null);setFragments(existing.fragments||[])}
-    else{setText('');setSelectedMood(null);setFragments([])}
-    setView('write');
-  };
-  const goToWriteFromFragment=()=>{const existing=entries[todayKey];setText(existing?.text||'');setSelectedMood(existing?.mood??null);setView('write')};
+    // 通用更新函数
+    const updateEntry = useCallback((key, updates) => {
+        setEntries(prev => {
+            const existing = prev[key] || { text:'', mood:null, fragments:[] };
+            return { ...prev, [key]: { ...existing, ...updates } };
+        });
+    }, []);
 
-  const handleSave=()=>{
-    if(text.trim()||selectedMood!==null||fragments.length>0){
-      setEntries(prev=>({...prev,[todayKey]:{text:text.trim(),mood:selectedMood,fragments:[...fragments]}}));
-      setSaved(true);setTimeout(()=>setSaved(false),2000);
-    }
-  };
+    // ★ 关键修复：随手记 → 立刻保存到 entries
+    const addFragment = () => {
+        if (!fragmentInput.trim()) return;
+        const now = new Date();
+        const time = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+        const newFragments = [...fragments, { text: fragmentInput.trim(), time }];
+        setFragments(newFragments);
+        setFragmentInput('');
+        updateEntry(todayKey, { fragments: newFragments });
+    };
 
-  const addFragment=()=>{
-    if(fragmentInput.trim()){
-      const now=new Date();const time=`${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-      setFragments(prev=>[...prev,{text:fragmentInput.trim(),time}]);setFragmentInput('');
-    }
-  };
+    // ★ 关键修复：选心情 → 立刻保存
+    const selectMood = (index) => {
+        setSelectedMood(index);
+        updateEntry(todayKey, { mood: index });
+    };
 
-  const startEditing=()=>{
-    if(!viewingDate||!entries[viewingDate])return;
-    const entry=entries[viewingDate];
-    setEditText(entry.text||'');setEditMood(entry.mood??null);
-    setEditFragments([...(entry.fragments||[])]);setEditFragmentInput('');setIsEditing(true);
-  };
+    const startWrite = () => {
+        const e = entries[todayKey];
+        if(e){ setText(e.text||''); setSelectedMood(e.mood??null); }
+        setView('write');
+    };
 
-  const saveEdit=()=>{
-    if(!viewingDate)return;
-    if(!editText.trim()&&editMood===null&&editFragments.length===0){
-      setEntries(prev=>{const next={...prev};delete next[viewingDate];return next});
-      setIsEditing(false);setView('calendar');return;
-    }
-    setEntries(prev=>({...prev,[viewingDate]:{text:editText.trim(),mood:editMood,fragments:[...editFragments]}}));
-    setIsEditing(false);
-  };
+    const handleSave = () => {
+        updateEntry(todayKey, { text: text.trim(), mood: selectedMood, fragments });
+        setSaved(true);
+        setTimeout(() => setSaved(false), 2000);
+    };
 
-  const addEditFragment=()=>{
-    if(editFragmentInput.trim()){
-      const now=new Date();const time=`${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-      setEditFragments(prev=>[...prev,{text:editFragmentInput.trim(),time}]);setEditFragmentInput('');
-    }
-  };
-  const removeEditFragment=(idx)=>setEditFragments(prev=>prev.filter((_,i)=>i!==idx));
+    // 日历
+    const calYear = calMonth.getFullYear();
+    const calMon = calMonth.getMonth();
+    const daysInMonth = new Date(calYear, calMon+1, 0).getDate();
+    const firstDay = new Date(calYear, calMon, 1).getDay();
+    const calDays = [];
+    for(let i=0;i<firstDay;i++) calDays.push(null);
+    for(let i=1;i<=daysInMonth;i++) calDays.push(i);
 
-  const download=(content,filename,type)=>{
-    const blob=new Blob([content],{type});const url=URL.createObjectURL(blob);
-    const a=document.createElement('a');a.href=url;a.download=filename;a.click();URL.revokeObjectURL(url);
-  };
+    // 搜索
+    const filteredKeys = useMemo(() => {
+        if(!searchQuery.trim()) return null;
+        const q = searchQuery.toLowerCase();
+        return Object.keys(entries).filter(key => {
+            const e = entries[key];
+            if(e.text && e.text.toLowerCase().includes(q)) return true;
+            if(e.fragments?.some(f => f.text.toLowerCase().includes(q))) return true;
+            if(e.mood!==null && e.mood!==undefined && moods[e.mood]?.label.includes(q)) return true;
+            return false;
+        });
+    }, [searchQuery, entries]);
 
-  const exportAs=(format)=>{
-    setShowExportModal(false);const sortedKeys=Object.keys(entries).sort();
-    if(format==='md'){
-      let md='# 我的日记\n\n';
-      sortedKeys.forEach(key=>{const e=entries[key];const ms=e.mood!=null?` ${moods[e.mood].emoji}`:'';
-        md+=`## ${formatDate(key)}${ms}\n\n`;
-        if(e.fragments?.length){e.fragments.forEach(f=>{md+=`- ${f.time} ${f.text}\n`});md+='\n'}
-        if(e.text)md+=`${e.text}\n\n`;md+='---\n\n';
-      });download(md,`diary-${todayKey}.md`,'text/markdown');
-    }else{
-      let txt='我的日记\n\n';
-      sortedKeys.forEach(key=>{const e=entries[key];const ms=e.mood!=null?`  ${moods[e.mood].emoji} ${moods[e.mood].label}`:'';
-        txt+=`${formatDate(key)}${ms}\n`;
-        if(e.fragments?.length){txt+='\n';e.fragments.forEach(f=>{txt+=`  ${f.time}  ${f.text}\n`})}
-        if(e.text)txt+=`\n${e.text}\n`;txt+='\n————————————\n\n';
-      });download(txt,`diary-${todayKey}.txt`,'text/plain');
-    }
-  };
+    const viewDetail = (key) => { setViewingDate(key); setIsEditing(false); setView('detail'); };
 
-  const navTo=(v)=>{setView(v);setIsEditing(false)};
-  const viewKey=view==='detail'?`detail-${viewingDate}-${isEditing}`:view;
+    const startEditing = () => {
+        if(!viewingDate||!entries[viewingDate]) return;
+        const e = entries[viewingDate];
+        setEditText(e.text||''); setEditMood(e.mood??null); setEditFragments(e.fragments||[]); setEditFragmentInput(''); setIsEditing(true);
+    };
 
-  /* ========== 各页面渲染 ========== */
+    const saveEdit = () => {
+        if(!viewingDate) return;
+        updateEntry(viewingDate, { text:editText.trim(), mood:editMood, fragments:editFragments });
+        setIsEditing(false);
+    };
 
-  const renderHome=()=>(
-    <div className="page" style={{paddingTop:64,paddingBottom:40,textAlign:'center'}}>
-      <p style={{fontSize:12,letterSpacing:2,color:'var(--t3)'}}>{dateStr} · {dayStr}</p>
-      <h1 style={{fontSize:24,fontWeight:300,margin:'8px 0 48px',color:'var(--t1)'}}>{getGreeting()}</h1>
-      <p style={{fontSize:14,fontWeight:300,color:'var(--t3)',marginBottom:56}}>{prompt}</p>
-      <div style={{display:'flex',flexDirection:'column',gap:12,marginBottom:48}}>
-        <button className="btn-primary" onClick={startWrite}>写日记</button>
-        <button className="btn-secondary" onClick={()=>setView('fragment')}>随手记一句</button>
-      </div>
-      <span style={{fontSize:12,color:'var(--t3)'}}>已记录 {Object.keys(entries).length} 篇日记</span>
-    </div>
-  );
+    const addEditFragment = () => {
+        if(!editFragmentInput.trim()) return;
+        const now = new Date();
+        const time = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+        setEditFragments(prev => [...prev, { text:editFragmentInput.trim(), time }]);
+        setEditFragmentInput('');
+    };
 
-  const renderWrite=()=>(
-    <div className="page" style={{paddingTop:32,paddingBottom:40}}>
-      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:32}}>
-        <button onClick={()=>navTo('home')} style={{fontSize:14,color:'var(--t3)'}}>← 返回</button>
-        <p style={{fontSize:12,color:'var(--t3)'}}>{dateStr} {dayStr}</p>
-      </div>
-      {fragments.length>0&&(
-        <div style={{marginBottom:24,padding:20,borderRadius:16,background:'var(--card)',boxShadow:'var(--shadow)'}}>
-          <p style={{fontSize:12,color:'var(--t3)',marginBottom:12}}>今天的碎片</p>
-          {fragments.map((f,i)=>(
-            <div key={i} style={{display:'flex',gap:12,marginBottom:i<fragments.length-1?8:0}}>
-              <span style={{fontSize:12,color:'var(--t3)',flexShrink:0,marginTop:2}}>{f.time}</span>
-              <span style={{fontSize:14,color:'var(--t2)'}}>{f.text}</span>
+    const exportAsText = () => {
+        const keys = Object.keys(entries).sort();
+        if(!keys.length){ alert('还没有日记可以导出'); return; }
+        let c = "我的心情日记\n\n";
+        keys.forEach(key => {
+            const e = entries[key];
+            c += `📅 ${formatDate(key)}`; if(e.mood!==null&&e.mood!==undefined) c+=` ${moods[e.mood]?.emoji||''}`; c+='\n';
+            if(e.text) c+=`${e.text}\n`;
+            if(e.fragments?.length) e.fragments.forEach(f => { c+=`  ${f.time} ${f.text}\n`; });
+            c+='\n';
+        });
+        const blob = new Blob([c],{type:'text/plain;charset=utf-8'}); const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href=url; a.download=`心情日记_${todayKey}.txt`; a.click(); URL.revokeObjectURL(url);
+    };
+
+    const exportAsJSON = () => {
+        const keys = Object.keys(entries);
+        if(!keys.length){ alert('还没有日记可以导出'); return; }
+        const blob = new Blob([JSON.stringify(entries,null,2)],{type:'application/json'}); const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href=url; a.download=`心情日记_${todayKey}.json`; a.click(); URL.revokeObjectURL(url);
+    };
+
+    const sortedKeys = Object.keys(entries).sort((a,b) => b.localeCompare(a));
+
+    // ===== HOME =====
+    const renderHome = () => (
+        <div>
+            <div className="header">
+                <div className="greeting">{getGreeting()} 👋</div>
+                <div className="date-str">{dateStr} {dayStr}</div>
             </div>
-          ))}
-        </div>
-      )}
-      <div style={{marginBottom:24}}>
-        <p style={{fontSize:12,color:'var(--t3)',marginBottom:12}}>此刻的心情</p>
-        <div style={{display:'flex',flexWrap:'wrap',gap:8}}>
-          {moods.map((m,i)=>(
-            <button key={i} className="mood-chip" onClick={()=>setSelectedMood(selectedMood===i?null:i)}
-              style={{background:selectedMood===i?'var(--accent-bg)':'var(--card)',border:`1px solid ${selectedMood===i?'var(--accent)':'var(--border)'}`,color:selectedMood===i?'var(--accent)':'var(--t2)'}}>
-              {m.emoji} {m.label}
-            </button>
-          ))}
-        </div>
-      </div>
-      <textarea className="textarea-main" value={text} onChange={e=>setText(e.target.value)} placeholder="写点什么吧，长短都好..." autoFocus/>
-      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginTop:20}}>
-        <span style={{fontSize:12,color:'var(--t3)'}}>{text.length>0?`${text.length} 字`:''}</span>
-        <button className="btn-save" onClick={handleSave}
-          style={{background:saved?'var(--accent-bg)':'var(--accent)',color:saved?'var(--accent)':'#fff'}}>
-          {saved?'已保存 ✓':'保存'}
-        </button>
-      </div>
-    </div>
-  );
-
-  const renderFragment=()=>(
-    <div className="page" style={{paddingTop:32,paddingBottom:40}}>
-      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:32}}>
-        <button onClick={()=>navTo('home')} style={{fontSize:14,color:'var(--t3)'}}>← 返回</button>
-        <p style={{fontSize:12,color:'var(--t3)'}}>{dateStr}</p>
-      </div>
-      <p style={{textAlign:'center',fontSize:14,fontWeight:300,color:'var(--t3)',marginBottom:32}}>随手记一句，不用想太多</p>
-      <div style={{display:'flex',gap:8,marginBottom:32}}>
-        <input value={fragmentInput} onChange={e=>setFragmentInput(e.target.value)}
-          onKeyDown={e=>e.key==='Enter'&&addFragment()} placeholder="这一刻在想什么..."
-          style={{flex:1,outline:'none',fontSize:14,padding:'12px 16px',borderRadius:12,background:'var(--card)',border:'1px solid var(--border)',color:'var(--t1)'}} autoFocus/>
-        <button onClick={addFragment} style={{padding:'12px 16px',borderRadius:12,fontSize:14,background:'var(--accent)',color:'#fff',flexShrink:0}}>记下</button>
-      </div>
-      {[...fragments].reverse().map((f,i)=>(
-        <div key={i} className="fragment-item">
-          <span style={{fontSize:12,color:'var(--t3)',flexShrink:0,marginTop:2}}>{f.time}</span>
-          <span style={{fontSize:14,fontWeight:300,color:'var(--t2)'}}>{f.text}</span>
-        </div>
-      ))}
-      {fragments.length>0&&(
-        <div style={{textAlign:'center',marginTop:32}}>
-          <button onClick={goToWriteFromFragment} style={{fontSize:14,color:'var(--accent)'}}>想多写几句？去写日记 →</button>
-        </div>
-      )}
-    </div>
-  );
-
-  const renderCalendar=()=>{
-    const entryKeysSet=new Set(filteredEntryKeys||Object.keys(entries));
-    const listKeys=filteredEntryKeys!==null?[...filteredEntryKeys].sort().reverse():Object.keys(entries).sort().reverse().slice(0,6);
-    return(
-      <div className="page" style={{paddingTop:32,paddingBottom:40}}>
-        <div style={{marginBottom:24}}>
-          <div className="search-bar">
-            <span style={{color:'var(--t3)'}}>🔍</span>
-            <input value={searchQuery} onChange={e=>setSearchQuery(e.target.value)} placeholder="搜索日记内容..."/>
-            {searchQuery&&<button onClick={()=>setSearchQuery('')} style={{color:'var(--t3)',fontSize:18,lineHeight:1}}>×</button>}
-          </div>
-          {filteredEntryKeys!==null&&<p style={{fontSize:12,color:'var(--t3)',marginTop:8,paddingLeft:4}}>找到 {filteredEntryKeys.length} 篇相关日记</p>}
-        </div>
-        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:24}}>
-          <button onClick={()=>setCalMonth(new Date(calYear,calMon-1,1))} style={{fontSize:20,color:'var(--t3)',padding:8}}>‹</button>
-          <span style={{fontSize:14,color:'var(--t1)'}}>{calYear}年{calMon+1}月</span>
-          <button onClick={()=>setCalMonth(new Date(calYear,calMon+1,1))} style={{fontSize:20,color:'var(--t3)',padding:8}}>›</button>
-        </div>
-        <div className="cal-grid" style={{marginBottom:4}}>
-          {['日','一','二','三','四','五','六'].map(d=>(
-            <div key={d} style={{textAlign:'center',fontSize:12,padding:'8px 0',color:'var(--t3)'}}>{d}</div>
-          ))}
-        </div>
-        <div className="cal-grid">
-          {calDays.map((day,i)=>{
-            if(!day)return <div key={i}/>;
-            const key=`${calYear}-${String(calMon+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-            const has=entryKeysSet.has(key);const isToday=key===todayKey;
-            return(
-              <button key={i} className="cal-cell" onClick={()=>{if(has){setViewingDate(key);setIsEditing(false);setView('detail')}}}
-                style={{background:isToday?'var(--accent-bg)':'transparent',borderRadius:12,cursor:has?'pointer':'default'}}>
-                <span style={{fontSize:14,color:isToday?'var(--accent)':has?'var(--t1)':'var(--t3)'}}>{day}</span>
-                {has&&<div style={{width:4,height:4,borderRadius:2,marginTop:4,background:'var(--accent)'}}/>}
-              </button>
-            );
-          })}
-        </div>
-        <div style={{marginTop:40}}>
-          <p style={{fontSize:12,letterSpacing:2,color:'var(--t3)',marginBottom:16}}>{filteredEntryKeys!==null?'搜索结果':'最近的日记'}</p>
-          {listKeys.length===0&&<p style={{textAlign:'center',fontSize:14,color:'var(--t3)',padding:'32px 0'}}>{filteredEntryKeys!==null?'没有找到相关内容':'还没有日记，去写一篇吧'}</p>}
-          {listKeys.map(key=>{
-            const e=entries[key];if(!e)return null;
-            return(
-              <button key={key} className="entry-card" onClick={()=>{setViewingDate(key);setIsEditing(false);setView('detail')}}>
-                <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:4}}>
-                  <span style={{fontSize:12,color:'var(--t3)'}}>{formatDate(key)}</span>
-                  {e.mood!=null&&<span style={{fontSize:14}}>{moods[e.mood].emoji}</span>}
+            <div className="prompt-card">{prompt}</div>
+            <div className="fragment-section">
+                <div className="fragment-title">随手记一句，不用想太多</div>
+                <div className="fragment-input-row">
+                    <input value={fragmentInput} onChange={e=>setFragmentInput(e.target.value)} placeholder="这一刻在想什么..." onKeyDown={e=>e.key==='Enter'&&addFragment()} />
+                    <button onClick={addFragment}>记下</button>
                 </div>
-                <p style={{fontSize:14,color:'var(--t2)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{e.text||'（无文字）'}</p>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-    );
-  };
-
-  const renderDetail=()=>{
-    if(!viewingDate||!entries[viewingDate])return null;
-    const entry=entries[viewingDate];
-    if(isEditing){
-      return(
-        <div className="page" style={{paddingTop:32,paddingBottom:40}}>
-          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:32}}>
-            <button onClick={()=>setIsEditing(false)} style={{fontSize:14,color:'var(--t3)'}}>取消</button>
-            <p style={{fontSize:12,letterSpacing:2,color:'var(--t3)'}}>编辑日记</p>
-            <button onClick={saveEdit} style={{fontSize:14,fontWeight:500,color:'var(--accent)'}}>保存</button>
-          </div>
-          <p style={{fontSize:12,letterSpacing:2,color:'var(--t3)',marginBottom:24}}>{formatDate(viewingDate)}</p>
-          <div style={{marginBottom:24}}>
-            <p style={{fontSize:12,color:'var(--t3)',marginBottom:12}}>心情</p>
-            <div style={{display:'flex',flexWrap:'wrap',gap:8}}>
-              {moods.map((m,i)=>(
-                <button key={i} className="mood-chip" onClick={()=>setEditMood(editMood===i?null:i)}
-                  style={{background:editMood===i?'var(--accent-bg)':'var(--card)',border:`1px solid ${editMood===i?'var(--accent)':'var(--border)'}`,color:editMood===i?'var(--accent)':'var(--t2)'}}>
-                  {m.emoji} {m.label}
-                </button>
-              ))}
+                {fragments.length>0 && <div className="fragment-list">{fragments.map((f,i)=>(<div key={i} className="fragment-item"><span className="time">{f.time}</span>{f.text}</div>))}</div>}
             </div>
-          </div>
-          {editFragments.length>0&&(
-            <div style={{marginBottom:16,padding:20,borderRadius:16,background:'var(--card)',boxShadow:'var(--shadow)'}}>
-              <p style={{fontSize:12,color:'var(--t3)',marginBottom:12}}>碎片</p>
-              {editFragments.map((f,i)=>(
-                <div key={i} style={{display:'flex',alignItems:'center',gap:12,marginBottom:i<editFragments.length-1?8:0}}>
-                  <span style={{fontSize:12,color:'var(--t3)',flexShrink:0}}>{f.time}</span>
-                  <span style={{fontSize:14,color:'var(--t2)',flex:1}}>{f.text}</span>
-                  <button onClick={()=>removeEditFragment(i)} style={{width:24,height:24,borderRadius:12,background:'var(--accent-bg)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14,color:'var(--t3)'}}>×</button>
+            <div className="write-link" onClick={startWrite}>想多写几句？去写日记 →</div>
+            <div className="section-title">今天的心情</div>
+            <div className="mood-row">
+                {moods.map((m,i)=>(<button key={i} className={`mood-btn ${selectedMood===i?'selected':''}`} onClick={()=>selectMood(i)}><span className="emoji">{m.emoji}</span>{m.label}</button>))}
+            </div>
+            <div className="search-bar"><input placeholder="搜索日记..." value={searchQuery} onChange={e=>setSearchQuery(e.target.value)} /></div>
+            <div className="section-title">{searchQuery.trim()?'搜索结果':'最近的日记'}</div>
+            <div className="entry-list">
+                {(searchQuery.trim()?filteredKeys:sortedKeys)?.filter(key=>{const e=entries[key];return e.text||(e.fragments&&e.fragments.length>0)||e.mood!==null;}).slice(0,10).map(key=>{
+                    const e=entries[key]; const dt=e.text||(e.fragments?.length?`${e.fragments[0].text}...`:'');
+                    return (<div key={key} className="entry-card" onClick={()=>viewDetail(key)}>
+                        <div className="entry-card-header"><span className="entry-card-date">{formatDate(key)}</span>{e.mood!==null&&e.mood!==undefined&&<span className="entry-card-mood">{moods[e.mood]?.emoji}</span>}</div>
+                        {dt&&<div className="entry-card-text">{dt}</div>}
+                    </div>);
+                })}
+            </div>
+        </div>
+    );
+
+    // ===== WRITE =====
+    const renderWrite = () => (
+        <div className="write-view">
+            <div className="write-header">
+                <button className="back-btn" onClick={()=>setView('home')}>← 返回</button>
+                <span className="write-date">{dateStr}</span>
+                <button className="save-btn" onClick={handleSave}>保存</button>
+            </div>
+            <div className="section-title" style={{margin:'0 0 10px'}}>选择心情</div>
+            <div className="mood-row" style={{padding:0,marginBottom:16}}>
+                {moods.map((m,i)=>(<button key={i} className={`mood-btn ${selectedMood===i?'selected':''}`} onClick={()=>setSelectedMood(i)}><span className="emoji">{m.emoji}</span>{m.label}</button>))}
+            </div>
+            <textarea className="write-textarea" value={text} onChange={e=>setText(e.target.value)} placeholder="写下今天的故事..." />
+            {saved && <div className="saved-toast">✓ 已保存</div>}
+        </div>
+    );
+
+    // ===== CALENDAR =====
+    const renderCalendar = () => (
+        <div className="calendar-view">
+            <div className="cal-header">
+                <button className="cal-nav" onClick={()=>setCalMonth(new Date(calYear,calMon-1))}>‹</button>
+                <h2>{calYear}年{calMon+1}月</h2>
+                <button className="cal-nav" onClick={()=>setCalMonth(new Date(calYear,calMon+1))}>›</button>
+            </div>
+            <div className="cal-weekdays">{weekdays.map(d=><div key={d}>{d}</div>)}</div>
+            <div className="cal-days">
+                {calDays.map((day,i)=>{
+                    if(day===null) return <div key={i} className="cal-day empty"/>;
+                    const key=`${calYear}-${String(calMon+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+                    const entry=entries[key]; const hasEntry=entry&&(entry.text||entry.fragments?.length||entry.mood!==null); const isToday=key===todayKey;
+                    return (<button key={i} className={`cal-day ${isToday?'today':''} ${hasEntry?'has-entry':''}`} onClick={()=>hasEntry&&viewDetail(key)}>
+                        {day}{entry?.mood!==null&&entry?.mood!==undefined&&<span className="cal-emoji">{moods[entry.mood]?.emoji}</span>}
+                    </button>);
+                })}
+            </div>
+        </div>
+    );
+
+    // ===== DETAIL =====
+    const renderDetail = () => {
+        const entry = entries[viewingDate]||{};
+        if(isEditing) return (
+            <div className="write-view">
+                <div className="write-header">
+                    <button className="back-btn" onClick={()=>setIsEditing(false)}>← 取消</button>
+                    <span className="write-date">{formatDate(viewingDate)}</span>
+                    <button className="save-btn" onClick={saveEdit}>保存</button>
                 </div>
-              ))}
+                <div className="mood-row" style={{padding:0,marginBottom:16}}>
+                    {moods.map((m,i)=>(<button key={i} className={`mood-btn ${editMood===i?'selected':''}`} onClick={()=>setEditMood(i)}><span className="emoji">{m.emoji}</span>{m.label}</button>))}
+                </div>
+                <textarea className="write-textarea" value={editText} onChange={e=>setEditText(e.target.value)} placeholder="写点什么..." />
+                <div className="fragment-section" style={{margin:0}}>
+                    <div className="fragment-title">碎片记录</div>
+                    <div className="fragment-input-row">
+                        <input value={editFragmentInput} onChange={e=>setEditFragmentInput(e.target.value)} placeholder="补充一条..." onKeyDown={e=>e.key==='Enter'&&addEditFragment()} />
+                        <button onClick={addEditFragment}>添加</button>
+                    </div>
+                    {editFragments.length>0&&<div className="fragment-list">{editFragments.map((f,i)=>(<div key={i} className="fragment-item"><span className="time">{f.time}</span>{f.text}</div>))}</div>}
+                </div>
             </div>
-          )}
-          <div style={{display:'flex',gap:8,marginBottom:24}}>
-            <input value={editFragmentInput} onChange={e=>setEditFragmentInput(e.target.value)}
-              onKeyDown={e=>e.key==='Enter'&&addEditFragment()} placeholder="添加碎片..."
-              style={{flex:1,outline:'none',fontSize:14,padding:'10px 16px',borderRadius:12,background:'var(--card)',border:'1px solid var(--border)',color:'var(--t1)'}}/>
-            <button onClick={addEditFragment} style={{padding:'10px 12px',borderRadius:12,fontSize:12,background:'var(--accent-bg)',color:'var(--accent)',flexShrink:0}}>添加</button>
-          </div>
-          <textarea className="textarea-main" value={editText} onChange={e=>setEditText(e.target.value)}/>
-          <p style={{fontSize:12,color:'var(--t3)',textAlign:'center',marginTop:12}}>清空所有内容并保存将删除这篇日记</p>
+        );
+        return (
+            <div className="detail-view">
+                <div className="detail-header">
+                    <button className="back-btn" onClick={()=>setView('calendar')}>← 返回</button>
+                    <span>{formatDate(viewingDate)}</span>
+                    <button className="edit-btn" onClick={startEditing}>编辑</button>
+                </div>
+                {entry.mood!==null&&entry.mood!==undefined&&<div className="detail-mood">{moods[entry.mood]?.emoji} {moods[entry.mood]?.label}</div>}
+                {entry.text&&<div className="detail-text">{entry.text}</div>}
+                {entry.fragments?.length>0&&<div><div className="detail-fragments-title">碎片记录</div><div className="fragment-list">{entry.fragments.map((f,i)=>(<div key={i} className="fragment-item"><span className="time">{f.time}</span>{f.text}</div>))}</div></div>}
+                {!entry.text&&!entry.fragments?.length&&(entry.mood===null||entry.mood===undefined)&&<div className="no-entry">这天还没有记录</div>}
+            </div>
+        );
+    };
+
+    // ===== EXPORT =====
+    const renderExport = () => (
+        <div className="export-view">
+            <div className="write-header" style={{marginBottom:20}}>
+                <button className="back-btn" onClick={()=>setView('home')}>← 返回</button>
+                <span>导出日记</span>
+                <div style={{width:40}}/>
+            </div>
+            <p style={{fontSize:14,color:'var(--t2)',marginBottom:20}}>选择导出格式</p>
+            <button className="export-btn" onClick={exportAsText}>📄 导出为文本文件 (.txt)</button>
+            <button className="export-btn" onClick={exportAsJSON}>💾 导出为 JSON 数据</button>
+            <p style={{fontSize:12,color:'var(--t3)',marginTop:20,lineHeight:1.6}}>提示：日记数据保存在浏览器本地，清除浏览器数据会导致日记丢失。建议定期导出备份。</p>
         </div>
-      );
-    }
-    return(
-      <div className="page" style={{paddingTop:32,paddingBottom:40}}>
-        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:40}}>
-          <button onClick={()=>navTo('calendar')} style={{fontSize:14,color:'var(--t3)'}}>← 返回</button>
-          <button onClick={startEditing} style={{display:'flex',alignItems:'center',gap:6,fontSize:14,padding:'6px 12px',borderRadius:999,color:'var(--accent)',background:'var(--accent-bg)'}}>✏️ 编辑</button>
-        </div>
-        <p style={{fontSize:12,letterSpacing:2,color:'var(--t3)',marginBottom:4}}>{formatDate(viewingDate)}</p>
-        {entry.mood!=null&&(
-          <span style={{display:'inline-block',padding:'4px 12px',borderRadius:999,fontSize:12,background:'var(--accent-bg)',color:'var(--accent)',marginTop:8,marginBottom:32}}>
-            {moods[entry.mood].emoji} {moods[entry.mood].label}
-          </span>
-        )}
-        {entry.fragments?.length>0&&(
-          <div style={{marginBottom:32,padding:20,borderRadius:16,background:'var(--card)',boxShadow:'var(--shadow)'}}>
-            <p style={{fontSize:12,color:'var(--t3)',marginBottom:12}}>碎片</p>
-            {entry.fragments.map((f,i)=>(
-              <div key={i} style={{display:'flex',gap:12,marginBottom:i<entry.fragments.length-1?8:0}}>
-                <span style={{fontSize:12,color:'var(--t3)',flexShrink:0,marginTop:2}}>{f.time}</span>
-                <span style={{fontSize:14,color:'var(--t2)'}}>{f.text}</span>
-              </div>
-            ))}
-          </div>
-        )}
-        <p style={{fontSize:16,lineHeight:2,fontWeight:300,whiteSpace:'pre-wrap',color:'var(--t1)'}}>{entry.text}</p>
-      </div>
     );
-  };
 
-  const renderView=()=>{
-    switch(view){
-      case'home':return renderHome();
-      case'write':return renderWrite();
-      case'fragment':return renderFragment();
-      case'calendar':return renderCalendar();
-      case'detail':return renderDetail();
-      default:return renderHome();
-    }
-  };
-
-  return(
-    <div style={{minHeight:'100vh',paddingBottom:80,background:'var(--bg)'}}>
-      {showExportModal&&(
-        <div className="overlay overlay-bg" onClick={()=>setShowExportModal(false)}>
-          <div className="overlay-mask"/>
-          <div className="modal modal-sheet" onClick={e=>e.stopPropagation()}>
-            <div className="modal-handle"/>
-            <p style={{fontSize:14,textAlign:'center',color:'var(--t1)',marginBottom:20}}>选择导出格式</p>
-            <div style={{display:'flex',flexDirection:'column',gap:8}}>
-              <button onClick={()=>exportAs('md')} style={{width:'100%',padding:14,borderRadius:12,fontSize:14,background:'var(--card)',border:'1px solid var(--border)',color:'var(--t1)'}}>Markdown (.md)</button>
-              <button onClick={()=>exportAs('txt')} style={{width:'100%',padding:14,borderRadius:12,fontSize:14,background:'var(--card)',border:'1px solid var(--border)',color:'var(--t1)'}}>纯文本 (.txt)</button>
+    return (
+        <div className="app">
+            {view==='home'&&renderHome()}
+            {view==='write'&&renderWrite()}
+            {view==='calendar'&&renderCalendar()}
+            {view==='detail'&&renderDetail()}
+            {view==='export'&&renderExport()}
+            <div className="bottom-nav">
+                <button className={`nav-item ${view==='home'?'active':''}`} onClick={()=>setView('home')}><span className="icon">🏠</span>首页</button>
+                <button className={`nav-item ${view==='calendar'?'active':''}`} onClick={()=>setView('calendar')}><span className="icon">📅</span>日历</button>
+                <button className={`nav-item ${view==='export'?'active':''}`} onClick={()=>setView('export')}><span className="icon">📦</span>导出</button>
             </div>
-            <button onClick={()=>setShowExportModal(false)} style={{width:'100%',padding:14,borderRadius:12,fontSize:14,color:'var(--t3)',marginTop:12}}>取消</button>
-          </div>
         </div>
-      )}
-      <div key={viewKey} className="animate-in">{renderView()}</div>
-      <div className="nav">
-        <button className="nav-item" onClick={()=>navTo('home')} style={{color:view==='home'?'var(--accent)':'var(--t3)'}}><span style={{fontSize:18}}>🏠</span><span>首页</span></button>
-        <button className="nav-item" onClick={()=>navTo('calendar')} style={{color:view==='calendar'||view==='detail'?'var(--accent)':'var(--t3)'}}><span style={{fontSize:18}}>📅</span><span>日历</span></button>
-        <button className="nav-item" onClick={()=>setShowExportModal(true)} style={{color:'var(--t3)'}}><span style={{fontSize:18}}>📥</span><span>导出</span></button>
-      </div>
-    </div>
-  );
+    );
 }
 
 ReactDOM.createRoot(document.getElementById('root')).render(<DiaryApp/>);
