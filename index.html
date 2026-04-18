@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>心情日记</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone@7/babel.min.js"></script>
+    <style>
+      *{margin:0;padding:0;box-sizing:border-box}
+      :root{--bg:#FFF8F0;--card:#FFFFFF;--primary:#FF8C69;--primary-light:#FFE4D6;--text:#2D2D2D;--text-light:#888;--border:#F0E8E0;--shadow:0 2px 12px rgba(0,0,0,0.08)}
+      body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans SC",sans-serif;background:var(--bg);color:var(--text);min-height:100vh;max-width:480px;margin:0 auto;overflow-x:hidden}
+      .page{padding:20px 16px 90px;min-height:100vh;animation:fadeIn .3s ease}
+      @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+      @keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+      .header{text-align:center;padding:20px 0}
+      .header h1{font-size:24px;font-weight:700}
+      .header p{font-size:14px;color:var(--text-light);margin-top:4px}
+      .card{background:var(--card);border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:var(--shadow);cursor:pointer;transition:transform .2s,box-shadow .2s}
+      .card:hover{transform:translateY(-2px);box-shadow:0 4px 20px rgba(0,0,0,0.12)}
+      .card:active{transform:scale(0.98)}
+      .card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+      .card-date{font-size:13px;color:var(--text-light)}
+      .card-mood{font-size:24px}
+      .card-content{font-size:15px;line-height:1.6;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+      .tag{display:inline-block;padding:2px 8px;border-radius:8px;font-size:11px;margin-top:6px}
+      .nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:rgba(255,255,255,0.95);backdrop-filter:blur(20px);display:flex;justify-content:space-around;padding:8px 0;padding-bottom:max(8px,env(safe-area-inset-bottom));border-top:1px solid var(--border);z-index:100}
+      .nav-item{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 16px;border:none;background:none;cursor:pointer;font-size:11px;color:var(--text-light);transition:color .2s;font-family:inherit}
+      .nav-item.active{color:var(--primary)}
+      .nav-item .nav-icon{font-size:22px;line-height:1}
+      .calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:12px}
+      .calendar-weekday{text-align:center;font-size:12px;color:var(--text-light);padding:8px 0;font-weight:500}
+      .calendar-day{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:12px;font-size:13px;cursor:pointer;transition:all .2s;border:2px solid transparent}
+      .calendar-day:hover{background:var(--primary-light)}
+      .calendar-day.today{border-color:var(--primary);font-weight:700}
+      .calendar-day.has-entry{background:var(--primary-light)}
+      .calendar-day.dimmed{opacity:0.25}
+      .calendar-day .day-mood{font-size:16px;line-height:1}
+      .calendar-day .day-num{font-size:11px;margin-top:1px}
+      .calendar-nav{display:flex;align-items:center;justify-content:space-between;padding:8px 0}
+      .calendar-nav h2{font-size:18px;font-weight:600}
+      .calendar-nav button{width:36px;height:36px;border-radius:50%;border:none;background:var(--card);box-shadow:var(--shadow);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:background .2s}
+      .calendar-nav button:hover{background:var(--primary-light)}
+      .mood-filter{display:flex;gap:8px;overflow-x:auto;padding:8px 0;margin-bottom:8px;scrollbar-width:none}
+      .mood-filter::-webkit-scrollbar{display:none}
+      .mood-filter-btn{flex-shrink:0;padding:6px 14px;border-radius:20px;border:2px solid var(--border);background:var(--card);cursor:pointer;font-size:14px;display:flex;align-items:center;gap:4px;transition:all .2s;font-family:inherit}
+      .mood-filter-btn:hover{border-color:var(--primary)}
+      .mood-filter-btn.active{border-color:var(--primary);background:var(--primary-light)}
+      .mood-selector{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;padding:16px 0}
+      .mood-option{width:64px;height:74px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border-radius:16px;border:2px solid var(--border);background:var(--card);cursor:pointer;transition:all .2s;font-family:inherit}
+      .mood-option:hover{border-color:var(--primary)}
+      .mood-option.selected{border-color:var(--primary);background:var(--primary-light);transform:scale(1.05)}
+      .mood-option .mood-emoji{font-size:28px}
+      .mood-option .mood-label{font-size:11px;color:var(--text-light)}
+      .diary-textarea{width:100%;min-height:200px;border:2px solid var(--border);border-radius:16px;padding:16px;font-size:15px;font-family:inherit;line-height:1.8;resize:vertical;outline:none;transition:border-color .2s;background:var(--card)}
+      .diary-textarea:focus{border-color:var(--primary)}
+      .btn{width:100%;padding:14px;border:none;border-radius:16px;font-size:16px;font-weight:600;cursor:pointer;transition:all .2s;font-family:inherit;margin-top:16px}
+      .btn-primary{background:var(--primary);color:white}
+      .btn-primary:hover{opacity:0.9}
+      .btn-primary:active{transform:scale(0.98)}
+      .btn-danger{background:#FF6B6B;color:white;margin-top:8px}
+      .btn-secondary{background:var(--border);color:var(--text)}
+      .stat-card{background:var(--card);border-radius:16px;padding:20px;margin-bottom:12px;box-shadow:var(--shadow)}
+      .stat-card h3{font-size:16px;margin-bottom:16px}
+      .stat-bar-container{display:flex;flex-direction:column;gap:12px}
+      .stat-bar-row{display:flex;align-items:center;gap:10px}
+      .stat-bar-emoji{font-size:22px;width:30px;text-align:center}
+      .stat-bar-track{flex:1;height:24px;background:#F5F0EB;border-radius:12px;overflow:hidden}
+      .stat-bar-fill{height:100%;border-radius:12px;transition:width .8s ease;display:flex;align-items:center;justify-content:flex-end;padding-right:8px;font-size:12px;font-weight:600;color:white}
+      .stat-number{font-size:36px;font-weight:700;color:var(--primary);text-align:center}
+      .stat-label{font-size:14px;color:var(--text-light);text-align:center;margin-top:4px}
+      .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+      .modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:200;padding:20px;animation:fadeIn .2s ease}
+      .modal-content{background:var(--card);border-radius:20px;padding:24px;width:100%;max-width:400px;max-height:80vh;overflow-y:auto;animation:slideUp .3s ease}
+      .modal-close{float:right;border:none;background:none;font-size:20px;cursor:pointer;padding:4px;color:var(--text-light)}
+      .modal-mood{font-size:48px;text-align:center;margin:16px 0 8px}
+      .modal-date{text-align:center;font-size:14px;color:var(--text-light);margin-bottom:16px}
+      .modal-text{font-size:15px;line-height:1.8;white-space:pre-wrap;word-break:break-word}
+      .modal-actions{display:flex;gap:8px;margin-top:20px}
+      .modal-actions .btn{flex:1;margin-top:0;padding:12px;font-size:14px}
+      .empty{text-align:center;padding:60px 20px;color:var(--text-light)}
+      .empty-icon{font-size:64px;margin-bottom:16px}
+      .empty p{font-size:15px}
+      .streak-banner{background:linear-gradient(135deg,#FF8C69,#FF6B9D);color:white;border-radius:16px;padding:16px 20px;margin-bottom:16px;display:flex;align-items:center;gap:12px}
+      .streak-icon{font-size:32px}
+      .streak-num{font-size:22px;font-weight:700}
+      .streak-text{font-size:14px;opacity:0.9}
+      .search-bar{display:flex;align-items:center;background:var(--card);border-radius:12px;padding:10px 14px;margin-bottom:16px;box-shadow:var(--shadow);gap:8px}
+      .search-bar input{flex:1;border:none;outline:none;font-size:14px;font-family:inherit;background:transparent}
+    </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const{useState,useEffect,useMemo}=React;
+
+const MOODS=[
+  {emoji:'😊',label:'开心',color:'#FFD93D'},
+  {emoji:'😌',label:'平静',color:'#6BCB77'},
+  {emoji:'😢',label:'难过',color:'#4D96FF'},
+  {emoji:'😡',label:'生气',color:'#FF6B6B'},
+  {emoji:'😰',label:'焦虑',color:'#C4B0FF'},
+  {emoji:'😴',label:'疲惫',color:'#A8A8A8'},
+];
+
+function formatDate(d){const x=new Date(d);return `${x.getFullYear()}年${x.getMonth()+1}月${x.getDate()}日`}
+function formatDateShort(d){const x=new Date(d),n=new Date(),diff=Math.floor((n-x)/864e5);if(diff===0)return'今天';if(diff===1)return'昨天';if(diff<7)return`${diff}天前`;return`${x.getMonth()+1}月${x.getDate()}日`}
+function getToday(){const d=new Date();return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
+
+function HomePage({entries,onView,onWrite}){
+  const[search,setSearch]=useState('');
+  const sorted=useMemo(()=>{
+    let list=[...entries].sort((a,b)=>new Date(b.date)-new Date(a.date));
+    if(search)list=list.filter(e=>e.content.includes(search));
+    return list;
+  },[entries,search]);
+
+  const streak=useMemo(()=>{
+    let count=0;const today=new Date();
+    for(let i=0;i<365;i++){
+      const d=new Date(today);d.setDate(d.getDate()-i);
+      const key=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+      if(entries.some(e=>e.date===key))count++;
+      else break;
+    }
+    return count;
+  },[entries]);
+
+  return(
+    <div className="page">
+      <div className="header"><h1>📔 心情日记</h1><p>记录每一天的心情</p></div>
+      {streak>0&&<div className="streak-banner"><span className="streak-icon">🔥</span><div><div className="streak-num">连续 {streak} 天</div><div className="streak-text">坚持记录，继续加油！</div></div></div>}
+      <div className="search-bar">
+        <span>🔍</span>
+        <input placeholder="搜索日记内容..." value={search} onChange={e=>setSearch(e.target.value)}/>
+        {search&&<span style={{cursor:'pointer'}} onClick={()=>setSearch('')}>✕</span>}
+      </div>
+      {sorted.length===0?(
+        <div className="empty"><div className="empty-icon">📝</div><p>{search?'没有找到相关日记':'还没有日记，开始写第一篇吧！'}</p>
+        {!search&&<button className="btn btn-primary" style={{maxWidth:200,margin:'16px auto 0'}} onClick={onWrite}>开始写日记</button>}</div>
+      ):(
+        sorted.map(entry=>(
+          <div className="card" key={entry.id} onClick={()=>onView(entry)}>
+            <div className="card-header"><span className="card-date">{formatDateShort(entry.date)}</span><span className="card-mood">{entry.mood.emoji}</span></div>
+            <div className="card-content">{entry.content}</div>
+            <span className="tag" style={{background:entry.mood.color+'30',color:entry.mood.color}}>{entry.mood.label}</span>
+          </div>
+        ))
+      )}
+    </div>
+  );
+}
+
+function CalendarPage({entries,onView}){
+  const[year,setYear]=useState(new Date().getFullYear());
+  const[month,setMonth]=useState(new Date().getMonth());
+  const[filterMood,setFilterMood]=useState(null);
+  const weekdays=['日','一','二','三','四','五','六'];
+  const daysInMonth=new Date(year,month+1,0).getDate();
+  const firstDay=new Date(year,month,1).getDay();
+  const today=getToday();
+  const entryMap=useMemo(()=>{const m={};entries.forEach(e=>{m[e.date]=e});return m},[entries]);
+  const prevMonth=()=>{if(month===0){setYear(y=>y-1);setMonth(11)}else setMonth(m=>m-1)};
+  const nextMonth=()=>{if(month===11){setYear(y=>y+1);setMonth(0)}else setMonth(m=>m+1)};
+  const days=[];
+  for(let i=0;i<firstDay;i++)days.push(null);
+  for(let i=1;i<=daysInMonth;i++)days.push(i);
+
+  return(
+    <div className="page">
+      <div className="header"><h1>📅 日历</h1></div>
+      <div className="mood-filter">
+        <button className={`mood-filter-btn ${filterMood===null?'active':''}`} onClick={()=>setFilterMood(null)}>全部</button>
+        {MOODS.map(m=><button key={m.label} className={`mood-filter-btn ${filterMood===m.label?'active':''}`} onClick={()=>setFilterMood(filterMood===m.label?null:m.label)}>{m.emoji} {m.label}</button>)}
+      </div>
+      <div className="stat-card">
+        <div className="calendar-nav">
+          <button onClick={prevMonth}>◀</button>
+          <h2>{year}年{month+1}月</h2>
+          <button onClick={nextMonth}>▶</button>
+        </div>
+        <div className="calendar-grid">
+          {weekdays.map(w=><div className="calendar-weekday" key={w}>{w}</div>)}
+          {days.map((day,i)=>{
+            if(!day)return<div key={'e'+i}/>;
+            const ds=`${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+            const entry=entryMap[ds];const isToday=ds===today;
+            const dimmed=(filterMood&&entry&&entry.mood.label!==filterMood)||(filterMood&&!entry);
+            return(
+              <div key={ds} className={`calendar-day ${isToday?'today':''} ${entry?'has-entry':''} ${dimmed?'dimmed':''}`} onClick={()=>entry&&onView(entry)}>
+                {entry&&<span className="day-mood">{entry.mood.emoji}</span>}
+                <span className="day-num">{day}</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function WritePage({onSave,editEntry,onCancel}){
+  const[mood,setMood]=useState(editEntry?editEntry.mood:null);
+  const[content,setContent]=useState(editEntry?editEntry.content:'');
+  const[date,setDate]=useState(editEntry?editEntry.date:getToday());
+  const handleSave=()=>{
+    if(!mood){alert('请选择今天的心情');return}
+    if(!content.trim()){alert('请写点什么吧');return}
+    onSave({id:editEntry?editEntry.id:Date.now(),date,mood,content:content.trim()});
+  };
+  return(
+    <div className="page">
+      <div className="header"><h1>{editEntry?'✏️ 编辑日记':'✍️ 写日记'}</h1><p>记录此刻的心情</p></div>
+      <div className="stat-card">
+        <h3>📅 日期</h3>
+        <input type="date" value={date} onChange={e=>setDate(e.target.value)} style={{width:'100%',padding:'10px 14px',borderRadius:12,border:'2px solid var(--border)',fontSize:15,fontFamily:'inherit',outline:'none',background:'var(--bg)'}}/>
+      </div>
+      <div className="stat-card">
+        <h3>今天的心情是？</h3>
+        <div className="mood-selector">
+          {MOODS.map(m=><button key={m.label} className={`mood-option ${mood&&mood.label===m.label?'selected':''}`} onClick={()=>setMood(m)}><span className="mood-emoji">{m.emoji}</span><span className="mood-label">{m.label}</span></button>)}
+        </div>
+      </div>
+      <div className="stat-card">
+        <h3>写点什么吧...</h3>
+        <textarea className="diary-textarea" value={content} onChange={e=>setContent(e.target.value)} placeholder="今天发生了什么？有什么想记录的？"/>
+      </div>
+      <button className="btn btn-primary" onClick={handleSave}>{editEntry?'保存修改':'保存日记'} 💾</button>
+      {editEntry&&<button className="btn btn-secondary" onClick={onCancel}>取消</button>}
+    </div>
+  );
+}
+
+function StatsPage({entries}){
+  const stats=useMemo(()=>{
+    const counts={};MOODS.forEach(m=>{counts[m.label]=0});
+    entries.forEach(e=>{if(counts[e.mood.label]!==undefined)counts[e.mood.label]++});
+    const max=Math.max(...Object.values(counts),1);
+    return{counts,max};
+  },[entries]);
+  const thisMonth=useMemo(()=>{const n=new Date();return entries.filter(e=>{const d=new Date(e.date);return d.getFullYear()===n.getFullYear()&&d.getMonth()===n.getMonth()}).length},[entries]);
+  const avgLen=useMemo(()=>{if(!entries.length)return 0;return Math.round(entries.reduce((s,e)=>s+e.content.length,0)/entries.length)},[entries]);
+
+  return(
+    <div className="page">
+      <div className="header"><h1>📊 统计</h1><p>回顾你的心情旅程</p></div>
+      <div className="stat-grid">
+        <div className="stat-card"><div className="stat-number">{entries.length}</div><div className="stat-label">总日记数</div></div>
+        <div className="stat-card"><div className="stat-number">{thisMonth}</div><div className="stat-label">本月日记</div></div>
+        <div className="stat-card"><div className="stat-number">{avgLen}</div><div className="stat-label">平均字数</div></div>
+        <div className="stat-card"><div className="stat-number" style={{fontSize:28}}>{entries.length>0?MOODS.reduce((best,m)=>(stats.counts[m.label]||0)>(stats.counts[best.label]||0)?m:best).emoji:'—'}</div><div className="stat-label">最常心情</div></div>
+      </div>
+      <div className="stat-card">
+        <h3>心情分布</h3>
+        <div className="stat-bar-container">
+          {MOODS.map(m=><div className="stat-bar-row" key={m.label}><span className="stat-bar-emoji">{m.emoji}</span><div className="stat-bar-track"><div className="stat-bar-fill" style={{width:`${Math.max((stats.counts[m.label]/stats.max)*100,stats.counts[m.label]>0?15:0)}%`,background:m.color}}>{stats.counts[m.label]>0?stats.counts[m.label]:''}</div></div></div>)}
+        </div>
+      </div>
+      {entries.length===0&&<div className="empty"><div className="empty-icon">📈</div><p>写几篇日记后就能看到统计啦</p></div>}
+    </div>
+  );
+}
+
+function DetailModal({entry,onClose,onEdit,onDelete}){
+  if(!entry)return null;
+  return(
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content" onClick={e=>e.stopPropagation()}>
+        <button className="modal-close" onClick={onClose}>✕</button>
+        <div className="modal-mood">{entry.mood.emoji}</div>
+        <div className="modal-date">{formatDate(entry.date)} · {entry.mood.label}</div>
+        <div className="modal-text">{entry.content}</div>
+        <div className="modal-actions">
+          <button className="btn btn-primary" onClick={()=>onEdit(entry)}>✏️ 编辑</button>
+          <button className="btn btn-danger" onClick={()=>{if(confirm('确定要删除这篇日记吗？'))onDelete(entry.id)}}>🗑️ 删除</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function App(){
+  const[page,setPage]=useState('home');
+  const[entries,setEntries]=useState([]);
+  const[viewEntry,setViewEntry]=useState(null);
+  const[editEntry,setEditEntry]=useState(null);
+
+  useEffect(()=>{const s=localStorage.getItem('mood-diary-entries');if(s)try{setEntries(JSON.parse(s))}catch(e){}},[]);
+  useEffect(()=>{localStorage.setItem('mood-diary-entries',JSON.stringify(entries))},[entries]);
+
+  const handleSave=(entry)=>{
+    setEntries(prev=>{const i=prev.findIndex(e=>e.id===entry.id);if(i>=0){const u=[...prev];u[i]=entry;return u}return[...prev,entry]});
+    setEditEntry(null);setPage('home');
+  };
+  const handleDelete=(id)=>{setEntries(prev=>prev.filter(e=>e.id!==id));setViewEntry(null)};
+  const handleEdit=(entry)=>{setViewEntry(null);setEditEntry(entry);setPage('write')};
+  const goWrite=()=>{setEditEntry(null);setPage('write')};
+
+  return(
+    <div>
+      {page==='home'&&<HomePage entries={entries} onView={setViewEntry} onWrite={goWrite}/>}
+      {page==='calendar'&&<CalendarPage entries={entries} onView={setViewEntry}/>}
+      {page==='write'&&<WritePage onSave={handleSave} editEntry={editEntry} onCancel={()=>{setEditEntry(null);setPage('home')}}/>}
+      {page==='stats'&&<StatsPage entries={entries}/>}
+      {viewEntry&&<DetailModal entry={viewEntry} onClose={()=>setViewEntry(null)} onEdit={handleEdit} onDelete={handleDelete}/>}
+      <nav className="nav">
+        <button className={`nav-item ${page==='home'?'active':''}`} onClick={()=>setPage('home')}><span className="nav-icon">🏠</span><span>首页</span></button>
+        <button className={`nav-item ${page==='calendar'?'active':''}`} onClick={()=>setPage('calendar')}><span className="nav-icon">📅</span><span>日历</span></button>
+        <button className={`nav-item ${page==='write'?'active':''}`} onClick={goWrite}><span className="nav-icon">✍️</span><span>写日记</span></button>
+        <button className={`nav-item ${page==='stats'?'active':''}`} onClick={()=>setPage('stats')}><span className="nav-icon">📊</span><span>统计</span></button>
+      </nav>
+    </div>
+  );
+}
+
+const root=ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App/>);
+</script>
+</body>
+</html>
