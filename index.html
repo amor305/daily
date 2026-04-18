@@ -29,7 +29,7 @@
     .search-bar input{flex:1;outline:none;font-size:14px;background:transparent;border:none;color:var(--t1)}
     .entry-card{width:100%;text-align:left;padding:16px;border-radius:16px;background:var(--card);box-shadow:var(--shadow);margin-bottom:8px;transition:transform .15s}
     .entry-card:active{transform:scale(.98)}
-    .textarea-main{width:100%;resize:none;outline:none;font-size:16px;font-weight:300;line-height:2;border-radius:16px;padding:20px;background:var(--card);border:1px solid var(--border);color:var(--t1);box-shadow:var(--shadow);min-height:120px;overflow:hidden}
+    .textarea-main{width:100%;resize:none;outline:none;font-size:16px;font-weight:300;line-height:2;border-radius:16px;padding:20px;background:var(--card);border:1px solid var(--border);color:var(--t1);box-shadow:var(--shadow);min-height:120px;overflow:hidden;display:block}
     .btn-primary{padding:16px;border-radius:16px;font-size:14px;background:var(--accent);color:#fff;width:100%}
     .btn-secondary{padding:16px;border-radius:16px;font-size:14px;background:var(--card);border:1px solid var(--border);color:var(--t2);box-shadow:var(--shadow);width:100%}
     .btn-save{padding:10px 24px;border-radius:999px;font-size:14px}
@@ -43,7 +43,7 @@
 <body>
 <div id="root"></div>
 <script type="text/babel">
-const{useState,useEffect,useMemo,useCallback}=React;
+const{useState,useEffect,useMemo,useCallback,useRef}=React;
 
 const store={
   get(k){try{const v=localStorage.getItem(k);return v?JSON.parse(v):null}catch(e){return null}},
@@ -65,6 +65,20 @@ const defaultEntries={
   '2026-04-16':{text:'下班路上下了一场小雨。没带伞，但也不想躲，就慢慢走回去了。到家的时候头发湿了，但心情意外地轻松。有时候淋一场雨也挺好的。',mood:6,fragments:[{text:'雨后的空气真好闻',time:'18:30'}]}
 };
 
+/* ── 自适应高度 textarea 组件 ── */
+function AutoTextarea({value,onChange,placeholder,autoFocus}){
+  const ref=useRef(null);
+  const resize=useCallback(()=>{
+    const el=ref.current;if(!el)return;
+    const scrollY=window.scrollY;          // 记住页面滚动位置
+    el.style.height='0';                   // 临时归零以取得真实 scrollHeight
+    el.style.height=Math.max(el.scrollHeight,120)+'px';
+    window.scrollTo(0,scrollY);            // 恢复滚动位置，避免跳动
+  },[]);
+  useEffect(()=>{resize()},[value,resize]);
+  return <textarea ref={ref} className="textarea-main" value={value} onChange={onChange} onInput={resize} placeholder={placeholder} autoFocus={autoFocus}/>;
+}
+
 function DiaryApp(){
   const[view,setView]=useState('home');
   const[entries,setEntries]=useState(()=>store.get('diary-data')||defaultEntries);
@@ -84,9 +98,6 @@ function DiaryApp(){
   const[showExportModal,setShowExportModal]=useState(false);
 
   useEffect(()=>{store.set('diary-data',entries)},[entries]);
-
-  const autoResize=(e)=>{e.target.style.height='auto';e.target.style.height=e.target.scrollHeight+'px'};
-  const textareaRef=useCallback((el)=>{if(el){el.style.height='auto';el.style.height=Math.max(el.scrollHeight,120)+'px'}},[]);
 
   const hasSampleEntries=Object.keys(defaultEntries).some(k=>entries[k]&&entries[k].text===defaultEntries[k].text);
   const clearSamples=()=>{
@@ -241,7 +252,7 @@ function DiaryApp(){
           ))}
         </div>
       </div>
-      <textarea className="textarea-main" ref={textareaRef} value={text} onChange={e=>setText(e.target.value)} onInput={autoResize} placeholder="写点什么吧，长短都好..." autoFocus/>
+      <AutoTextarea value={text} onChange={e=>setText(e.target.value)} placeholder="写点什么吧，长短都好..." autoFocus/>
       <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginTop:20}}>
         <span style={{fontSize:12,color:'var(--t3)'}}>{text.length>0?`${text.length} 字`:''}</span>
         <button className="btn-save" onClick={handleSave}
@@ -383,7 +394,7 @@ function DiaryApp(){
               style={{flex:1,outline:'none',fontSize:14,padding:'10px 16px',borderRadius:12,background:'var(--card)',border:'1px solid var(--border)',color:'var(--t1)'}}/>
             <button onClick={addEditFragment} style={{padding:'10px 12px',borderRadius:12,fontSize:12,background:'var(--accent-bg)',color:'var(--accent)',flexShrink:0}}>添加</button>
           </div>
-          <textarea className="textarea-main" ref={textareaRef} value={editText} onChange={e=>setEditText(e.target.value)} onInput={autoResize}/>
+          <AutoTextarea value={editText} onChange={e=>setEditText(e.target.value)} placeholder="写点什么吧..." autoFocus/>
           <p style={{fontSize:12,color:'var(--t3)',textAlign:'center',marginTop:12}}>清空所有内容并保存将删除这篇日记</p>
         </div>
       );
