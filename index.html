@@ -38,6 +38,14 @@
     .modal{position:relative;width:100%;max-width:500px;border-radius:24px 24px 0 0;padding:24px 24px 40px;background:var(--bg)}
     .modal-handle{width:32px;height:4px;border-radius:4px;background:var(--border);margin:0 auto 24px}
     .fragment-item{display:flex;gap:12px;padding:16px;border-radius:12px;background:var(--card);box-shadow:var(--shadow);margin-bottom:8px}
+    .tl-entry{margin-bottom:32px}
+    .tl-tag{display:inline-block;font-size:13px;font-weight:600;color:#333;letter-spacing:.3px;background:#f0eeeb;padding:5px 12px;border-radius:6px;margin-bottom:10px}
+    .tl-tag .tl-weekday{font-weight:400;color:#999;margin-left:6px;font-size:11px}
+    .tl-tag .tl-mood{margin-right:6px}
+    .tl-content{font-size:14px;color:#444;line-height:2;white-space:pre-wrap}
+    .tl-divider{height:1px;background:#f0f0f0;margin-top:32px}
+    .tl-entry:last-child .tl-divider{display:none}
+    .tl-entry:active{opacity:.7}
   </style>
 </head>
 <body>
@@ -45,40 +53,50 @@
 <script type="text/babel">
 const{useState,useEffect,useMemo,useCallback,useRef}=React;
 
+/* ── 数据读写工具 ── */
 const store={
   get(k){try{const v=localStorage.getItem(k);return v?JSON.parse(v):null}catch(e){return null}},
   set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
 };
 
+/* ── 心情列表 ── */
 const moods=[
   {emoji:'😌',label:'平静'},{emoji:'😊',label:'开心'},{emoji:'😔',label:'低落'},
   {emoji:'😤',label:'烦躁'},{emoji:'🥱',label:'疲惫'},{emoji:'🤔',label:'思考'},
   {emoji:'🥰',label:'温暖'},{emoji:'😶',label:'说不清'}
 ];
 
+/* ── 首页随机提示语 ── */
 const prompts=["今天，有什么想对自己说的吗","此刻的你，感觉怎么样","今天有什么小事让你停了一下","如果用一个词形容今天，会是什么"];
+
+/* ── 工具函数 ── */
 const getDateKey=(d)=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 const formatDate=(key)=>{const[y,m,d]=key.split('-');return`${y}年${parseInt(m)}月${parseInt(d)}日`};
+const weekdayNames=['日','一','二','三','四','五','六'];
 
+/* ── 示例日记（首次使用展示） ── */
 const defaultEntries={
   '2026-04-10':{text:'今天去了一家很安静的咖啡店，窗边有一束光刚好落在桌上。点了一杯热拿铁，什么也没做，就坐着看外面的人来人往。',mood:6,fragments:[{text:'窗边的光很好看',time:'14:20'}]},
   '2026-04-16':{text:'下班路上下了一场小雨。没带伞，但也不想躲，就慢慢走回去了。到家的时候头发湿了，但心情意外地轻松。有时候淋一场雨也挺好的。',mood:6,fragments:[{text:'雨后的空气真好闻',time:'18:30'}]}
 };
 
-/* ── 自适应高度 textarea 组件 ── */
+/* ── 自适应高度 textarea 组件（防跳动） ── */
 function AutoTextarea({value,onChange,placeholder,autoFocus}){
   const ref=useRef(null);
   const resize=useCallback(()=>{
     const el=ref.current;if(!el)return;
-    const scrollY=window.scrollY;          // 记住页面滚动位置
-    el.style.height='0';                   // 临时归零以取得真实 scrollHeight
+    const scrollY=window.scrollY;
+    el.style.height='0';
     el.style.height=Math.max(el.scrollHeight,120)+'px';
-    window.scrollTo(0,scrollY);            // 恢复滚动位置，避免跳动
+    window.scrollTo(0,scrollY);
   },[]);
   useEffect(()=>{resize()},[value,resize]);
   return <textarea ref={ref} className="textarea-main" value={value} onChange={onChange} onInput={resize} placeholder={placeholder} autoFocus={autoFocus}/>;
 }
 
+/* ══════════════════════════════════════ */
+/* ══  主应用组件                      ══ */
+/* ══════════════════════════════════════ */
 function DiaryApp(){
   const[view,setView]=useState('home');
   const[entries,setEntries]=useState(()=>store.get('diary-data')||defaultEntries);
@@ -99,21 +117,22 @@ function DiaryApp(){
 
   useEffect(()=>{store.set('diary-data',entries)},[entries]);
 
+  /* ── 示例日记检测与清除 ── */
   const hasSampleEntries=Object.keys(defaultEntries).some(k=>entries[k]&&entries[k].text===defaultEntries[k].text);
   const clearSamples=()=>{
     const dks=Object.keys(defaultEntries);
     setEntries(prev=>{const next={...prev};dks.forEach(k=>{if(next[k]&&next[k].text===defaultEntries[k].text)delete next[k]});return next});
   };
 
+  /* ── 日期与问候 ── */
   const today=new Date();
   const todayKey=getDateKey(today);
-  const weekdays=['日','一','二','三','四','五','六'];
   const dateStr=`${today.getMonth()+1}月${today.getDate()}日`;
-  const dayStr=`星期${weekdays[today.getDay()]}`;
+  const dayStr=`星期${weekdayNames[today.getDay()]}`;
   const prompt=useMemo(()=>prompts[Math.floor(Math.random()*prompts.length)],[]);
-
   const getGreeting=()=>{const h=today.getHours();if(h<6)return'夜深了';if(h<12)return'早上好';if(h<14)return'中午好';if(h<18)return'下午好';if(h<22)return'晚上好';return'夜深了'};
 
+  /* ── 日历计算 ── */
   const calYear=calMonth.getFullYear();
   const calMon=calMonth.getMonth();
   const daysInMonth=new Date(calYear,calMon+1,0).getDate();
@@ -122,6 +141,7 @@ function DiaryApp(){
   for(let i=0;i<firstDay;i++)calDays.push(null);
   for(let i=1;i<=daysInMonth;i++)calDays.push(i);
 
+  /* ── 搜索 ── */
   const filteredEntryKeys=useMemo(()=>{
     if(!searchQuery.trim())return null;
     const q=searchQuery.toLowerCase();
@@ -134,6 +154,7 @@ function DiaryApp(){
     });
   },[searchQuery,entries]);
 
+  /* ── 写日记 ── */
   const startWrite=()=>{
     const existing=entries[todayKey];
     if(existing){setText(existing.text||'');setSelectedMood(existing.mood??null);setFragments(existing.fragments||[])}
@@ -149,6 +170,7 @@ function DiaryApp(){
     }
   };
 
+  /* ── 碎片记录 ── */
   const addFragment=()=>{
     if(fragmentInput.trim()){
       const now=new Date();const time=`${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
@@ -159,6 +181,7 @@ function DiaryApp(){
     }
   };
 
+  /* ── 编辑日记 ── */
   const startEditing=()=>{
     if(!viewingDate||!entries[viewingDate])return;
     const entry=entries[viewingDate];
@@ -184,6 +207,7 @@ function DiaryApp(){
   };
   const removeEditFragment=(idx)=>setEditFragments(prev=>prev.filter((_,i)=>i!==idx));
 
+  /* ── 导出 ── */
   const download=(content,filename,type)=>{
     const blob=new Blob([content],{type});const url=URL.createObjectURL(blob);
     const a=document.createElement('a');a.href=url;a.download=filename;a.click();URL.revokeObjectURL(url);
@@ -208,9 +232,15 @@ function DiaryApp(){
     }
   };
 
+  /* ── 导航 ── */
   const navTo=(v)=>{setView(v);setIsEditing(false)};
   const viewKey=view==='detail'?`detail-${viewingDate}-${isEditing}`:view;
 
+  /* ══════════════════════════════════ */
+  /* ══  各页面渲染                  ══ */
+  /* ══════════════════════════════════ */
+
+  /* ── 首页 ── */
   const renderHome=()=>(
     <div className="page" style={{paddingTop:64,paddingBottom:40,textAlign:'center'}}>
       <p style={{fontSize:12,letterSpacing:2,color:'var(--t3)'}}>{dateStr} · {dayStr}</p>
@@ -224,6 +254,7 @@ function DiaryApp(){
     </div>
   );
 
+  /* ── 写日记页 ── */
   const renderWrite=()=>(
     <div className="page" style={{paddingTop:32,paddingBottom:40}}>
       <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:32}}>
@@ -263,6 +294,7 @@ function DiaryApp(){
     </div>
   );
 
+  /* ── 碎片记录页 ── */
   const renderFragment=()=>(
     <div className="page" style={{paddingTop:32,paddingBottom:40}}>
       <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:32}}>
@@ -290,6 +322,7 @@ function DiaryApp(){
     </div>
   );
 
+  /* ── 日历页 ── */
   const renderCalendar=()=>{
     const entryKeysSet=new Set(filteredEntryKeys||Object.keys(entries));
     const listKeys=filteredEntryKeys!==null?[...filteredEntryKeys].sort().reverse():Object.keys(entries).sort().reverse().slice(0,6);
@@ -353,9 +386,46 @@ function DiaryApp(){
     );
   };
 
+  /* ── 时间线页 ── */
+  const renderTimeline=()=>{
+    const sortedKeys=Object.keys(entries).sort().reverse();
+    return(
+      <div className="page" style={{paddingTop:32,paddingBottom:40}}>
+        <div style={{marginBottom:36}}>
+          <h1 style={{fontSize:22,fontWeight:700,color:'var(--t1)',letterSpacing:-0.5}}>日记时间线</h1>
+          <p style={{fontSize:12,color:'var(--t3)',marginTop:4}}>共 {sortedKeys.length} 篇</p>
+        </div>
+        {sortedKeys.length===0&&(
+          <p style={{textAlign:'center',fontSize:14,color:'var(--t3)',padding:'32px 0'}}>还没有日记，去写一篇吧</p>
+        )}
+        {sortedKeys.map((key)=>{
+          const e=entries[key];if(!e)return null;
+          const[y,m,d]=key.split('-');
+          const dateObj=new Date(parseInt(y),parseInt(m)-1,parseInt(d));
+          const weekday=`星期${weekdayNames[dateObj.getDay()]}`;
+          const dateDisplay=`${y}.${m}.${d}`;
+          const moodEmoji=e.mood!=null?moods[e.mood].emoji:'';
+          return(
+            <button key={key} className="tl-entry" style={{display:'block',width:'100%',textAlign:'left',background:'none',border:'none',padding:0}}
+              onClick={()=>{setViewingDate(key);setIsEditing(false);setView('detail')}}>
+              <div className="tl-tag">
+                {moodEmoji&&<span className="tl-mood">{moodEmoji}</span>}
+                {dateDisplay} <span className="tl-weekday">{weekday}</span>
+              </div>
+              <div className="tl-content">{e.text||'（无文字）'}</div>
+              <div className="tl-divider"/>
+            </button>
+          );
+        })}
+      </div>
+    );
+  };
+
+  /* ── 详情页 / 编辑页 ── */
   const renderDetail=()=>{
     if(!viewingDate||!entries[viewingDate])return null;
     const entry=entries[viewingDate];
+    const cameFromTimeline=true;
     if(isEditing){
       return(
         <div className="page" style={{paddingTop:32,paddingBottom:40}}>
@@ -402,7 +472,7 @@ function DiaryApp(){
     return(
       <div className="page" style={{paddingTop:32,paddingBottom:40}}>
         <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:40}}>
-          <button onClick={()=>navTo('calendar')} style={{fontSize:14,color:'var(--t3)'}}>← 返回</button>
+          <button onClick={()=>navTo(prevView||'calendar')} style={{fontSize:14,color:'var(--t3)'}}>← 返回</button>
           <button onClick={startEditing} style={{display:'flex',alignItems:'center',gap:6,fontSize:14,padding:'6px 12px',borderRadius:999,color:'var(--accent)',background:'var(--accent-bg)'}}>✏️ 编辑</button>
         </div>
         <p style={{fontSize:12,letterSpacing:2,color:'var(--t3)',marginBottom:4}}>{formatDate(viewingDate)}</p>
@@ -427,17 +497,24 @@ function DiaryApp(){
     );
   };
 
+  /* ── 记录从哪个页面进入详情 ── */
+  const[prevView,setPrevView]=useState('calendar');
+  const openDetail=(key,from)=>{setViewingDate(key);setIsEditing(false);setPrevView(from);setView('detail')};
+
+  /* ── 视图分发 ── */
   const renderView=()=>{
     switch(view){
       case'home':return renderHome();
       case'write':return renderWrite();
       case'fragment':return renderFragment();
       case'calendar':return renderCalendar();
+      case'timeline':return renderTimeline();
       case'detail':return renderDetail();
       default:return renderHome();
     }
   };
 
+  /* ── 主渲染 ── */
   return(
     <div style={{minHeight:'100vh',paddingBottom:80,background:'var(--bg)'}}>
       {showExportModal&&(
@@ -457,6 +534,7 @@ function DiaryApp(){
       <div key={viewKey} className="animate-in">{renderView()}</div>
       <div className="nav">
         <button className="nav-item" onClick={()=>navTo('home')} style={{color:view==='home'?'var(--accent)':'var(--t3)'}}><span style={{fontSize:18}}>🏠</span><span>首页</span></button>
+        <button className="nav-item" onClick={()=>navTo('timeline')} style={{color:view==='timeline'?'var(--accent)':'var(--t3)'}}><span style={{fontSize:18}}>📖</span><span>时间线</span></button>
         <button className="nav-item" onClick={()=>navTo('calendar')} style={{color:view==='calendar'||view==='detail'?'var(--accent)':'var(--t3)'}}><span style={{fontSize:18}}>📅</span><span>日历</span></button>
         <button className="nav-item" onClick={()=>setShowExportModal(true)} style={{color:'var(--t3)'}}><span style={{fontSize:18}}>📥</span><span>导出</span></button>
       </div>
