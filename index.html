@@ -1,321 +1,575 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>心情日记</title>
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone@7/babel.min.js"></script>
-    <style>
-      *{margin:0;padding:0;box-sizing:border-box}
-      :root{--bg:#FFF8F0;--card:#FFFFFF;--primary:#FF8C69;--primary-light:#FFE4D6;--text:#2D2D2D;--text-light:#888;--border:#F0E8E0;--shadow:0 2px 12px rgba(0,0,0,0.08)}
-      body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans SC",sans-serif;background:var(--bg);color:var(--text);min-height:100vh;max-width:480px;margin:0 auto;overflow-x:hidden}
-      .page{padding:20px 16px 90px;min-height:100vh;animation:fadeIn .3s ease}
-      @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-      @keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
-      .header{text-align:center;padding:20px 0}
-      .header h1{font-size:24px;font-weight:700}
-      .header p{font-size:14px;color:var(--text-light);margin-top:4px}
-      .card{background:var(--card);border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:var(--shadow);cursor:pointer;transition:transform .2s,box-shadow .2s}
-      .card:hover{transform:translateY(-2px);box-shadow:0 4px 20px rgba(0,0,0,0.12)}
-      .card:active{transform:scale(0.98)}
-      .card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-      .card-date{font-size:13px;color:var(--text-light)}
-      .card-mood{font-size:24px}
-      .card-content{font-size:15px;line-height:1.6;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
-      .tag{display:inline-block;padding:2px 8px;border-radius:8px;font-size:11px;margin-top:6px}
-      .nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:rgba(255,255,255,0.95);backdrop-filter:blur(20px);display:flex;justify-content:space-around;padding:8px 0;padding-bottom:max(8px,env(safe-area-inset-bottom));border-top:1px solid var(--border);z-index:100}
-      .nav-item{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 16px;border:none;background:none;cursor:pointer;font-size:11px;color:var(--text-light);transition:color .2s;font-family:inherit}
-      .nav-item.active{color:var(--primary)}
-      .nav-item .nav-icon{font-size:22px;line-height:1}
-      .calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:12px}
-      .calendar-weekday{text-align:center;font-size:12px;color:var(--text-light);padding:8px 0;font-weight:500}
-      .calendar-day{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:12px;font-size:13px;cursor:pointer;transition:all .2s;border:2px solid transparent}
-      .calendar-day:hover{background:var(--primary-light)}
-      .calendar-day.today{border-color:var(--primary);font-weight:700}
-      .calendar-day.has-entry{background:var(--primary-light)}
-      .calendar-day.dimmed{opacity:0.25}
-      .calendar-day .day-mood{font-size:16px;line-height:1}
-      .calendar-day .day-num{font-size:11px;margin-top:1px}
-      .calendar-nav{display:flex;align-items:center;justify-content:space-between;padding:8px 0}
-      .calendar-nav h2{font-size:18px;font-weight:600}
-      .calendar-nav button{width:36px;height:36px;border-radius:50%;border:none;background:var(--card);box-shadow:var(--shadow);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:background .2s}
-      .calendar-nav button:hover{background:var(--primary-light)}
-      .mood-filter{display:flex;gap:8px;overflow-x:auto;padding:8px 0;margin-bottom:8px;scrollbar-width:none}
-      .mood-filter::-webkit-scrollbar{display:none}
-      .mood-filter-btn{flex-shrink:0;padding:6px 14px;border-radius:20px;border:2px solid var(--border);background:var(--card);cursor:pointer;font-size:14px;display:flex;align-items:center;gap:4px;transition:all .2s;font-family:inherit}
-      .mood-filter-btn:hover{border-color:var(--primary)}
-      .mood-filter-btn.active{border-color:var(--primary);background:var(--primary-light)}
-      .mood-selector{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;padding:16px 0}
-      .mood-option{width:64px;height:74px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border-radius:16px;border:2px solid var(--border);background:var(--card);cursor:pointer;transition:all .2s;font-family:inherit}
-      .mood-option:hover{border-color:var(--primary)}
-      .mood-option.selected{border-color:var(--primary);background:var(--primary-light);transform:scale(1.05)}
-      .mood-option .mood-emoji{font-size:28px}
-      .mood-option .mood-label{font-size:11px;color:var(--text-light)}
-      .diary-textarea{width:100%;min-height:200px;border:2px solid var(--border);border-radius:16px;padding:16px;font-size:15px;font-family:inherit;line-height:1.8;resize:vertical;outline:none;transition:border-color .2s;background:var(--card)}
-      .diary-textarea:focus{border-color:var(--primary)}
-      .btn{width:100%;padding:14px;border:none;border-radius:16px;font-size:16px;font-weight:600;cursor:pointer;transition:all .2s;font-family:inherit;margin-top:16px}
-      .btn-primary{background:var(--primary);color:white}
-      .btn-primary:hover{opacity:0.9}
-      .btn-primary:active{transform:scale(0.98)}
-      .btn-danger{background:#FF6B6B;color:white;margin-top:8px}
-      .btn-secondary{background:var(--border);color:var(--text)}
-      .stat-card{background:var(--card);border-radius:16px;padding:20px;margin-bottom:12px;box-shadow:var(--shadow)}
-      .stat-card h3{font-size:16px;margin-bottom:16px}
-      .stat-bar-container{display:flex;flex-direction:column;gap:12px}
-      .stat-bar-row{display:flex;align-items:center;gap:10px}
-      .stat-bar-emoji{font-size:22px;width:30px;text-align:center}
-      .stat-bar-track{flex:1;height:24px;background:#F5F0EB;border-radius:12px;overflow:hidden}
-      .stat-bar-fill{height:100%;border-radius:12px;transition:width .8s ease;display:flex;align-items:center;justify-content:flex-end;padding-right:8px;font-size:12px;font-weight:600;color:white}
-      .stat-number{font-size:36px;font-weight:700;color:var(--primary);text-align:center}
-      .stat-label{font-size:14px;color:var(--text-light);text-align:center;margin-top:4px}
-      .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-      .modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:200;padding:20px;animation:fadeIn .2s ease}
-      .modal-content{background:var(--card);border-radius:20px;padding:24px;width:100%;max-width:400px;max-height:80vh;overflow-y:auto;animation:slideUp .3s ease}
-      .modal-close{float:right;border:none;background:none;font-size:20px;cursor:pointer;padding:4px;color:var(--text-light)}
-      .modal-mood{font-size:48px;text-align:center;margin:16px 0 8px}
-      .modal-date{text-align:center;font-size:14px;color:var(--text-light);margin-bottom:16px}
-      .modal-text{font-size:15px;line-height:1.8;white-space:pre-wrap;word-break:break-word}
-      .modal-actions{display:flex;gap:8px;margin-top:20px}
-      .modal-actions .btn{flex:1;margin-top:0;padding:12px;font-size:14px}
-      .empty{text-align:center;padding:60px 20px;color:var(--text-light)}
-      .empty-icon{font-size:64px;margin-bottom:16px}
-      .empty p{font-size:15px}
-      .streak-banner{background:linear-gradient(135deg,#FF8C69,#FF6B9D);color:white;border-radius:16px;padding:16px 20px;margin-bottom:16px;display:flex;align-items:center;gap:12px}
-      .streak-icon{font-size:32px}
-      .streak-num{font-size:22px;font-weight:700}
-      .streak-text{font-size:14px;opacity:0.9}
-      .search-bar{display:flex;align-items:center;background:var(--card);border-radius:12px;padding:10px 14px;margin-bottom:16px;box-shadow:var(--shadow);gap:8px}
-      .search-bar input{flex:1;border:none;outline:none;font-size:14px;font-family:inherit;background:transparent}
-    </style>
-</head>
-<body>
-<div id="root"></div>
-<script type="text/babel">
-const{useState,useEffect,useMemo}=React;
+import React, { useState, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Home, Calendar, Download, ChevronLeft, ChevronRight, Search, X, Pencil } from 'lucide-react';
 
-const MOODS=[
-  {emoji:'😊',label:'开心',color:'#FFD93D'},
-  {emoji:'😌',label:'平静',color:'#6BCB77'},
-  {emoji:'😢',label:'难过',color:'#4D96FF'},
-  {emoji:'😡',label:'生气',color:'#FF6B6B'},
-  {emoji:'😰',label:'焦虑',color:'#C4B0FF'},
-  {emoji:'😴',label:'疲惫',color:'#A8A8A8'},
+const moods = [
+  { emoji: "😌", label: "平静" },
+  { emoji: "😊", label: "开心" },
+  { emoji: "😔", label: "低落" },
+  { emoji: "😤", label: "烦躁" },
+  { emoji: "🥱", label: "疲惫" },
+  { emoji: "🤔", label: "思考" },
+  { emoji: "🥰", label: "温暖" },
+  { emoji: "😶", label: "说不清" },
 ];
 
-function formatDate(d){const x=new Date(d);return `${x.getFullYear()}年${x.getMonth()+1}月${x.getDate()}日`}
-function formatDateShort(d){const x=new Date(d),n=new Date(),diff=Math.floor((n-x)/864e5);if(diff===0)return'今天';if(diff===1)return'昨天';if(diff<7)return`${diff}天前`;return`${x.getMonth()+1}月${x.getDate()}日`}
-function getToday(){const d=new Date();return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
+const prompts = [
+  "今天，有什么想对自己说的吗",
+  "此刻的你，感觉怎么样",
+  "今天有什么小事让你停了一下",
+  "如果用一个词形容今天，会是什么",
+];
 
-function HomePage({entries,onView,onWrite}){
-  const[search,setSearch]=useState('');
-  const sorted=useMemo(()=>{
-    let list=[...entries].sort((a,b)=>new Date(b.date)-new Date(a.date));
-    if(search)list=list.filter(e=>e.content.includes(search));
-    return list;
-  },[entries,search]);
+const getDateKey = (d) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
-  const streak=useMemo(()=>{
-    let count=0;const today=new Date();
-    for(let i=0;i<365;i++){
-      const d=new Date(today);d.setDate(d.getDate()-i);
-      const key=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-      if(entries.some(e=>e.date===key))count++;
-      else break;
+const formatDate = (key) => {
+  const [y, m, d] = key.split('-');
+  return `${y}年${parseInt(m)}月${parseInt(d)}日`;
+};
+
+const initialEntries = {
+  '2026-04-05': {
+    text: '傍晚出门散步，看到路边的樱花已经开了大半。风一吹，花瓣落了一地。站在那看了很久，什么也没想。',
+    mood: 0,
+    fragments: [{ text: '樱花开了', time: '17:40' }],
+  },
+  '2026-04-10': {
+    text: '今天去了一家很安静的咖啡店，窗边有一束光刚好落在桌上。点了一杯热拿铁，什么也没做，就坐着看外面的人来人往。',
+    mood: 6,
+    fragments: [{ text: '窗边的光很好看', time: '14:20' }],
+  },
+  '2026-04-13': {
+    text: '和朋友聊了很久，说到小时候的事情。原来我们记得的细节完全不一样，同一件事在各自的记忆里变成了不同的故事。记忆真的很不可靠，但也因此很有趣。',
+    mood: 1,
+    fragments: [
+      { text: '朋友说的那句话很有意思', time: '19:45' },
+      { text: '原来那件事她完全不记得了', time: '20:10' },
+    ],
+  },
+  '2026-04-16': {
+    text: '下班路上下了一场小雨。没带伞，但也不想躲，就慢慢走回去了。到家的时候头发湿了，但心情意外地轻松。有时候淋一场雨也挺好的。',
+    mood: 6,
+    fragments: [
+      { text: '雨后的空气真好闻', time: '18:30' },
+      { text: '鞋子湿了但无所谓', time: '18:50' },
+    ],
+  },
+};
+
+const s = {
+  bg: '#f8f6f1',
+  card: '#ffffff',
+  t1: '#2c2a27',
+  t2: '#7a7672',
+  t3: '#b5b0a9',
+  accent: '#7c9a82',
+  accentBg: '#eef3ef',
+  border: '#e8e4de',
+  shadow: '0 1px 4px rgba(44,42,39,0.05)',
+};
+
+export default function DiaryApp() {
+  const [view, setView] = useState('home');
+  const [entries, setEntries] = useState(initialEntries);
+  const [text, setText] = useState('');
+  const [selectedMood, setSelectedMood] = useState(null);
+  const [fragments, setFragments] = useState([]);
+  const [fragmentInput, setFragmentInput] = useState('');
+  const [calMonth, setCalMonth] = useState(() => new Date());
+  const [viewingDate, setViewingDate] = useState(null);
+  const [saved, setSaved] = useState(false);
+
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
+  const [editText, setEditText] = useState('');
+  const [editMood, setEditMood] = useState(null);
+  const [editFragments, setEditFragments] = useState([]);
+  const [editFragmentInput, setEditFragmentInput] = useState('');
+  const [showExportModal, setShowExportModal] = useState(false);
+
+  const today = new Date();
+  const todayKey = getDateKey(today);
+  const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
+  const dateStr = `${today.getMonth() + 1}月${today.getDate()}日`;
+  const dayStr = `星期${weekdays[today.getDay()]}`;
+  const prompt = useMemo(() => prompts[Math.floor(Math.random() * prompts.length)], []);
+
+  const getGreeting = () => {
+    const h = today.getHours();
+    if (h < 6) return '夜深了';
+    if (h < 12) return '早上好';
+    if (h < 14) return '中午好';
+    if (h < 18) return '下午好';
+    if (h < 22) return '晚上好';
+    return '夜深了';
+  };
+
+  const calYear = calMonth.getFullYear();
+  const calMon = calMonth.getMonth();
+  const daysInMonth = new Date(calYear, calMon + 1, 0).getDate();
+  const firstDay = new Date(calYear, calMon, 1).getDay();
+  const calDays = [];
+  for (let i = 0; i < firstDay; i++) calDays.push(null);
+  for (let i = 1; i <= daysInMonth; i++) calDays.push(i);
+
+  const filteredEntryKeys = useMemo(() => {
+    if (!searchQuery.trim()) return null;
+    const q = searchQuery.toLowerCase();
+    return Object.keys(entries).filter((key) => {
+      const e = entries[key];
+      if (e.text && e.text.toLowerCase().includes(q)) return true;
+      if (e.fragments?.some((f) => f.text.toLowerCase().includes(q))) return true;
+      if (e.mood != null && moods[e.mood].label.includes(q)) return true;
+      return false;
+    });
+  }, [searchQuery, entries]);
+
+  const startWrite = () => {
+    const existing = entries[todayKey];
+    if (existing) {
+      setText(existing.text || '');
+      setSelectedMood(existing.mood ?? null);
+      setFragments(existing.fragments || []);
+    } else {
+      setText('');
+      setSelectedMood(null);
+      setFragments([]);
     }
-    return count;
-  },[entries]);
+    setView('write');
+  };
 
-  return(
-    <div className="page">
-      <div className="header"><h1>📔 心情日记</h1><p>记录每一天的心情</p></div>
-      {streak>0&&<div className="streak-banner"><span className="streak-icon">🔥</span><div><div className="streak-num">连续 {streak} 天</div><div className="streak-text">坚持记录，继续加油！</div></div></div>}
-      <div className="search-bar">
-        <span>🔍</span>
-        <input placeholder="搜索日记内容..." value={search} onChange={e=>setSearch(e.target.value)}/>
-        {search&&<span style={{cursor:'pointer'}} onClick={()=>setSearch('')}>✕</span>}
-      </div>
-      {sorted.length===0?(
-        <div className="empty"><div className="empty-icon">📝</div><p>{search?'没有找到相关日记':'还没有日记，开始写第一篇吧！'}</p>
-        {!search&&<button className="btn btn-primary" style={{maxWidth:200,margin:'16px auto 0'}} onClick={onWrite}>开始写日记</button>}</div>
-      ):(
-        sorted.map(entry=>(
-          <div className="card" key={entry.id} onClick={()=>onView(entry)}>
-            <div className="card-header"><span className="card-date">{formatDateShort(entry.date)}</span><span className="card-mood">{entry.mood.emoji}</span></div>
-            <div className="card-content">{entry.content}</div>
-            <span className="tag" style={{background:entry.mood.color+'30',color:entry.mood.color}}>{entry.mood.label}</span>
-          </div>
-        ))
-      )}
+  const goToWriteFromFragment = () => {
+    const existing = entries[todayKey];
+    setText(existing?.text || '');
+    setSelectedMood(existing?.mood ?? null);
+    setView('write');
+  };
+
+  const handleSave = () => {
+    if (text.trim() || selectedMood !== null || fragments.length > 0) {
+      setEntries((prev) => ({
+        ...prev,
+        [todayKey]: { text: text.trim(), mood: selectedMood, fragments: [...fragments] },
+      }));
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    }
+  };
+
+  const addFragment = () => {
+    if (fragmentInput.trim()) {
+      const now = new Date();
+      const time = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+      setFragments((prev) => [...prev, { text: fragmentInput.trim(), time }]);
+      setFragmentInput('');
+    }
+  };
+
+  const startEditing = () => {
+    if (!viewingDate || !entries[viewingDate]) return;
+    const entry = entries[viewingDate];
+    setEditText(entry.text || '');
+    setEditMood(entry.mood ?? null);
+    setEditFragments([...(entry.fragments || [])]);
+    setEditFragmentInput('');
+    setIsEditing(true);
+  };
+
+  const saveEdit = () => {
+    if (!viewingDate) return;
+    if (!editText.trim() && editMood === null && editFragments.length === 0) {
+      setEntries((prev) => {
+        const next = { ...prev };
+        delete next[viewingDate];
+        return next;
+      });
+      setIsEditing(false);
+      setView('calendar');
+      return;
+    }
+    setEntries((prev) => ({
+      ...prev,
+      [viewingDate]: { text: editText.trim(), mood: editMood, fragments: [...editFragments] },
+    }));
+    setIsEditing(false);
+  };
+
+  const addEditFragment = () => {
+    if (editFragmentInput.trim()) {
+      const now = new Date();
+      const time = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+      setEditFragments((prev) => [...prev, { text: editFragmentInput.trim(), time }]);
+      setEditFragmentInput('');
+    }
+  };
+
+  const removeEditFragment = (index) => {
+    setEditFragments((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const exportAs = (format) => {
+    setShowExportModal(false);
+    const sortedKeys = Object.keys(entries).sort();
+    if (format === 'md') {
+      let md = '# 我的日记\n\n';
+      sortedKeys.forEach((key) => {
+        const e = entries[key];
+        const moodStr = e.mood != null ? ` ${moods[e.mood].emoji}` : '';
+        md += `## ${formatDate(key)}${moodStr}\n\n`;
+        if (e.fragments?.length) {
+          e.fragments.forEach((f) => { md += `- ${f.time} ${f.text}\n`; });
+          md += '\n';
+        }
+        if (e.text) md += `${e.text}\n\n`;
+        md += '---\n\n';
+      });
+      download(md, `diary-${todayKey}.md`, 'text/markdown');
+    } else {
+      let txt = '我的日记\n\n';
+      sortedKeys.forEach((key) => {
+        const e = entries[key];
+        const moodStr = e.mood != null ? `  ${moods[e.mood].emoji} ${moods[e.mood].label}` : '';
+        txt += `${formatDate(key)}${moodStr}\n`;
+        if (e.fragments?.length) {
+          txt += '\n';
+          e.fragments.forEach((f) => { txt += `  ${f.time}  ${f.text}\n`; });
+        }
+        if (e.text) txt += `\n${e.text}\n`;
+        txt += '\n————————————\n\n';
+      });
+      download(txt, `diary-${todayKey}.txt`, 'text/plain');
+    }
+  };
+
+  const download = (content, filename, type) => {
+    const blob = new Blob([content], { type });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const navTo = (v) => { setView(v); setIsEditing(false); };
+  const viewKey = view === 'detail' ? `detail-${viewingDate}-${isEditing}` : view;
+
+  const Nav = () => (
+    <div className="fixed bottom-0 left-0 right-0 flex justify-around items-center py-3 z-10" style={{ background: s.bg, borderTop: `1px solid ${s.border}` }}>
+      <button onClick={() => navTo('home')} className="flex flex-col items-center gap-0.5 px-4 py-1">
+        <Home size={18} color={view === 'home' ? s.accent : s.t3} />
+        <span className="text-xs" style={{ color: view === 'home' ? s.accent : s.t3 }}>首页</span>
+      </button>
+      <button onClick={() => navTo('calendar')} className="flex flex-col items-center gap-0.5 px-4 py-1">
+        <Calendar size={18} color={view === 'calendar' || view === 'detail' ? s.accent : s.t3} />
+        <span className="text-xs" style={{ color: view === 'calendar' || view === 'detail' ? s.accent : s.t3 }}>日历</span>
+      </button>
+      <button onClick={() => setShowExportModal(true)} className="flex flex-col items-center gap-0.5 px-4 py-1">
+        <Download size={18} color={s.t3} />
+        <span className="text-xs" style={{ color: s.t3 }}>导出</span>
+      </button>
     </div>
   );
-}
 
-function CalendarPage({entries,onView}){
-  const[year,setYear]=useState(new Date().getFullYear());
-  const[month,setMonth]=useState(new Date().getMonth());
-  const[filterMood,setFilterMood]=useState(null);
-  const weekdays=['日','一','二','三','四','五','六'];
-  const daysInMonth=new Date(year,month+1,0).getDate();
-  const firstDay=new Date(year,month,1).getDay();
-  const today=getToday();
-  const entryMap=useMemo(()=>{const m={};entries.forEach(e=>{m[e.date]=e});return m},[entries]);
-  const prevMonth=()=>{if(month===0){setYear(y=>y-1);setMonth(11)}else setMonth(m=>m-1)};
-  const nextMonth=()=>{if(month===11){setYear(y=>y+1);setMonth(0)}else setMonth(m=>m+1)};
-  const days=[];
-  for(let i=0;i<firstDay;i++)days.push(null);
-  for(let i=1;i<=daysInMonth;i++)days.push(i);
-
-  return(
-    <div className="page">
-      <div className="header"><h1>📅 日历</h1></div>
-      <div className="mood-filter">
-        <button className={`mood-filter-btn ${filterMood===null?'active':''}`} onClick={()=>setFilterMood(null)}>全部</button>
-        {MOODS.map(m=><button key={m.label} className={`mood-filter-btn ${filterMood===m.label?'active':''}`} onClick={()=>setFilterMood(filterMood===m.label?null:m.label)}>{m.emoji} {m.label}</button>)}
-      </div>
-      <div className="stat-card">
-        <div className="calendar-nav">
-          <button onClick={prevMonth}>◀</button>
-          <h2>{year}年{month+1}月</h2>
-          <button onClick={nextMonth}>▶</button>
-        </div>
-        <div className="calendar-grid">
-          {weekdays.map(w=><div className="calendar-weekday" key={w}>{w}</div>)}
-          {days.map((day,i)=>{
-            if(!day)return<div key={'e'+i}/>;
-            const ds=`${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-            const entry=entryMap[ds];const isToday=ds===today;
-            const dimmed=(filterMood&&entry&&entry.mood.label!==filterMood)||(filterMood&&!entry);
-            return(
-              <div key={ds} className={`calendar-day ${isToday?'today':''} ${entry?'has-entry':''} ${dimmed?'dimmed':''}`} onClick={()=>entry&&onView(entry)}>
-                {entry&&<span className="day-mood">{entry.mood.emoji}</span>}
-                <span className="day-num">{day}</span>
+  const renderView = () => {
+    if (view === 'detail' && viewingDate && entries[viewingDate]) {
+      const entry = entries[viewingDate];
+      if (isEditing) {
+        return (
+          <div className="max-w-xl mx-auto px-6 py-8">
+            <div className="flex items-center justify-between mb-8">
+              <button onClick={() => setIsEditing(false)} className="text-sm" style={{ color: s.t3 }}>取消</button>
+              <p className="text-xs tracking-widest" style={{ color: s.t3 }}>编辑日记</p>
+              <button onClick={saveEdit} className="text-sm font-medium" style={{ color: s.accent }}>保存</button>
+            </div>
+            <p className="text-xs tracking-widest mb-6" style={{ color: s.t3 }}>{formatDate(viewingDate)}</p>
+            <div className="mb-6">
+              <p className="text-xs mb-3" style={{ color: s.t3 }}>心情</p>
+              <div className="flex flex-wrap gap-2">
+                {moods.map((m, i) => (
+                  <button key={i} onClick={() => setEditMood(editMood === i ? null : i)} className="px-3 py-1.5 rounded-full text-xs"
+                    style={{ background: editMood === i ? s.accentBg : s.card, border: `1px solid ${editMood === i ? s.accent : s.border}`, color: editMood === i ? s.accent : s.t2 }}>
+                    {m.emoji} {m.label}
+                  </button>
+                ))}
               </div>
-            );
-          })}
+            </div>
+            {editFragments.length > 0 && (
+              <div className="mb-4 p-5 rounded-2xl" style={{ background: s.card, boxShadow: s.shadow }}>
+                <p className="text-xs mb-3" style={{ color: s.t3 }}>碎片</p>
+                {editFragments.map((f, i) => (
+                  <div key={i} className="flex items-center gap-3 mb-2 last:mb-0">
+                    <span className="text-xs shrink-0" style={{ color: s.t3 }}>{f.time}</span>
+                    <span className="text-sm flex-1" style={{ color: s.t2 }}>{f.text}</span>
+                    <button onClick={() => removeEditFragment(i)} className="p-1 rounded-full" style={{ background: s.accentBg }}>
+                      <X size={12} color={s.t3} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="flex gap-2 mb-6">
+              <input value={editFragmentInput} onChange={(e) => setEditFragmentInput(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && addEditFragment()}
+                placeholder="添加碎片..." className="flex-1 outline-none text-sm px-4 py-2.5 rounded-xl"
+                style={{ background: s.card, border: `1px solid ${s.border}`, color: s.t1 }} />
+              <button onClick={addEditFragment} className="px-3 py-2.5 rounded-xl text-xs shrink-0"
+                style={{ background: s.accentBg, color: s.accent }}>添加</button>
+            </div>
+            <textarea value={editText} onChange={(e) => setEditText(e.target.value)}
+              className="w-full resize-none outline-none text-base font-light leading-loose rounded-2xl p-5"
+              style={{ minHeight: '200px', background: s.card, border: `1px solid ${s.border}`, color: s.t1, boxShadow: s.shadow }} />
+            <p className="text-xs mt-3 text-center" style={{ color: s.t3 }}>清空所有内容并保存将删除这篇日记</p>
+          </div>
+        );
+      }
+      return (
+        <div className="max-w-xl mx-auto px-6 py-8">
+          <div className="flex items-center justify-between mb-10">
+            <button onClick={() => navTo('calendar')} className="text-sm" style={{ color: s.t3 }}>← 返回</button>
+            <button onClick={startEditing} className="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-full"
+              style={{ color: s.accent, background: s.accentBg }}>
+              <Pencil size={13} /> 编辑
+            </button>
+          </div>
+          <p className="text-xs tracking-widest mb-1" style={{ color: s.t3 }}>{formatDate(viewingDate)}</p>
+          {entry.mood != null && (
+            <span className="inline-block px-3 py-1 rounded-full text-xs mt-2 mb-8"
+              style={{ background: s.accentBg, color: s.accent }}>
+              {moods[entry.mood].emoji} {moods[entry.mood].label}
+            </span>
+          )}
+          {entry.fragments?.length > 0 && (
+            <div className="mb-8 p-5 rounded-2xl" style={{ background: s.card, boxShadow: s.shadow }}>
+              <p className="text-xs mb-3" style={{ color: s.t3 }}>碎片</p>
+              {entry.fragments.map((f, i) => (
+                <div key={i} className="flex gap-3 mb-2 last:mb-0">
+                  <span className="text-xs shrink-0 mt-0.5" style={{ color: s.t3 }}>{f.time}</span>
+                  <span className="text-sm" style={{ color: s.t2 }}>{f.text}</span>
+                </div>
+              ))}
+            </div>
+          )}
+          <p className="text-base leading-loose font-light whitespace-pre-wrap" style={{ color: s.t1 }}>{entry.text}</p>
+        </div>
+      );
+    }
+
+    if (view === 'calendar') {
+      const entryKeysSet = new Set(filteredEntryKeys || Object.keys(entries));
+      const listKeys = filteredEntryKeys !== null
+        ? [...filteredEntryKeys].sort().reverse()
+        : Object.keys(entries).sort().reverse().slice(0, 6);
+      return (
+        <div className="max-w-xl mx-auto px-6 py-8">
+          <div className="mb-6">
+            <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl" style={{ background: s.card, border: `1px solid ${s.border}` }}>
+              <Search size={15} color={s.t3} />
+              <input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="搜索日记内容..." className="flex-1 outline-none text-sm bg-transparent" style={{ color: s.t1 }} />
+              {searchQuery && <button onClick={() => setSearchQuery('')}><X size={14} color={s.t3} /></button>}
+            </div>
+            {filteredEntryKeys !== null && (
+              <p className="text-xs mt-2 px-1" style={{ color: s.t3 }}>找到 {filteredEntryKeys.length} 篇相关日记</p>
+            )}
+          </div>
+          <div className="flex items-center justify-between mb-6">
+            <button onClick={() => setCalMonth(new Date(calYear, calMon - 1, 1))}><ChevronLeft size={18} color={s.t3} /></button>
+            <span className="text-sm" style={{ color: s.t1 }}>{calYear}年{calMon + 1}月</span>
+            <button onClick={() => setCalMonth(new Date(calYear, calMon + 1, 1))}><ChevronRight size={18} color={s.t3} /></button>
+          </div>
+          <div className="grid grid-cols-7 mb-1">
+            {['日', '一', '二', '三', '四', '五', '六'].map((d) => (
+              <div key={d} className="text-center text-xs py-2" style={{ color: s.t3 }}>{d}</div>
+            ))}
+          </div>
+          <div className="grid grid-cols-7">
+            {calDays.map((day, i) => {
+              if (!day) return <div key={i} />;
+              const key = `${calYear}-${String(calMon + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+              const has = entryKeysSet.has(key);
+              const isToday = key === todayKey;
+              return (
+                <button key={i} onClick={() => { if (has) { setViewingDate(key); setIsEditing(false); setView('detail'); } }}
+                  className="flex flex-col items-center justify-center py-3 mx-auto rounded-xl"
+                  style={{ background: isToday ? s.accentBg : 'transparent', cursor: has ? 'pointer' : 'default', width: '100%' }}>
+                  <span className="text-sm" style={{ color: isToday ? s.accent : has ? s.t1 : s.t3 }}>{day}</span>
+                  {has && <div className="w-1 h-1 rounded-full mt-1" style={{ background: s.accent }} />}
+                </button>
+              );
+            })}
+          </div>
+          <div className="mt-10">
+            <p className="text-xs tracking-widest mb-4" style={{ color: s.t3 }}>
+              {filteredEntryKeys !== null ? '搜索结果' : '最近的日记'}
+            </p>
+            {listKeys.length === 0 && (
+              <p className="text-center text-sm py-8" style={{ color: s.t3 }}>
+                {filteredEntryKeys !== null ? '没有找到相关内容' : '还没有日记，去写一篇吧'}
+              </p>
+            )}
+            {listKeys.map((key) => {
+              const e = entries[key];
+              if (!e) return null;
+              return (
+                <button key={key} onClick={() => { setViewingDate(key); setIsEditing(false); setView('detail'); }}
+                  className="w-full text-left p-4 rounded-2xl mb-2" style={{ background: s.card, boxShadow: s.shadow }}>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs" style={{ color: s.t3 }}>{formatDate(key)}</span>
+                    {e.mood != null && <span className="text-sm">{moods[e.mood].emoji}</span>}
+                  </div>
+                  <p className="text-sm truncate" style={{ color: s.t2 }}>{e.text || '（无文字）'}</p>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      );
+    }
+
+    if (view === 'write') {
+      return (
+        <div className="max-w-xl mx-auto px-6 py-6">
+          <div className="flex items-center justify-between mb-8">
+            <button onClick={() => navTo('home')} className="text-sm" style={{ color: s.t3 }}>← 返回</button>
+            <p className="text-xs" style={{ color: s.t3 }}>{dateStr} {dayStr}</p>
+          </div>
+          {fragments.length > 0 && (
+            <div className="mb-6 p-5 rounded-2xl" style={{ background: s.card, boxShadow: s.shadow }}>
+              <p className="text-xs mb-3" style={{ color: s.t3 }}>今天的碎片</p>
+              {fragments.map((f, i) => (
+                <div key={i} className="flex gap-3 mb-2 last:mb-0">
+                  <span className="text-xs shrink-0 mt-0.5" style={{ color: s.t3 }}>{f.time}</span>
+                  <span className="text-sm" style={{ color: s.t2 }}>{f.text}</span>
+                </div>
+              ))}
+            </div>
+          )}
+          <div className="mb-6">
+            <p className="text-xs mb-3" style={{ color: s.t3 }}>此刻的心情</p>
+            <div className="flex flex-wrap gap-2">
+              {moods.map((m, i) => (
+                <button key={i} onClick={() => setSelectedMood(selectedMood === i ? null : i)}
+                  className="px-3 py-1.5 rounded-full text-xs"
+                  style={{ background: selectedMood === i ? s.accentBg : s.card, border: `1px solid ${selectedMood === i ? s.accent : s.border}`, color: selectedMood === i ? s.accent : s.t2 }}>
+                  {m.emoji} {m.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <textarea value={text} onChange={(e) => setText(e.target.value)}
+            placeholder="写点什么吧，长短都好..."
+            className="w-full resize-none outline-none text-base font-light leading-loose rounded-2xl p-5"
+            style={{ minHeight: '200px', background: s.card, border: `1px solid ${s.border}`, color: s.t1, boxShadow: s.shadow }}
+            autoFocus />
+          <div className="flex items-center justify-between mt-5">
+            <span className="text-xs" style={{ color: s.t3 }}>{text.length > 0 ? `${text.length} 字` : ''}</span>
+            <button onClick={handleSave} className="px-6 py-2.5 rounded-full text-sm"
+              style={{ background: saved ? s.accentBg : s.accent, color: saved ? s.accent : '#fff' }}>
+              {saved ? '已保存 ✓' : '保存'}
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    if (view === 'fragment') {
+      return (
+        <div className="max-w-xl mx-auto px-6 py-6">
+          <div className="flex items-center justify-between mb-8">
+            <button onClick={() => navTo('home')} className="text-sm" style={{ color: s.t3 }}>← 返回</button>
+            <p className="text-xs" style={{ color: s.t3 }}>{dateStr}</p>
+          </div>
+          <p className="text-center text-sm font-light mb-8" style={{ color: s.t3 }}>随手记一句，不用想太多</p>
+          <div className="flex gap-2 mb-8">
+            <input value={fragmentInput} onChange={(e) => setFragmentInput(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && addFragment()}
+              placeholder="这一刻在想什么..." className="flex-1 outline-none text-sm px-4 py-3 rounded-xl"
+              style={{ background: s.card, border: `1px solid ${s.border}`, color: s.t1 }} autoFocus />
+            <button onClick={addFragment} className="px-4 py-3 rounded-xl text-sm shrink-0"
+              style={{ background: s.accent, color: '#fff' }}>记下</button>
+          </div>
+          <div className="space-y-2">
+            {[...fragments].reverse().map((f, i) => (
+              <div key={i} className="flex gap-3 p-4 rounded-xl" style={{ background: s.card, boxShadow: s.shadow }}>
+                <span className="text-xs shrink-0 mt-0.5" style={{ color: s.t3 }}>{f.time}</span>
+                <span className="text-sm font-light" style={{ color: s.t2 }}>{f.text}</span>
+              </div>
+            ))}
+          </div>
+          {fragments.length > 0 && (
+            <div className="text-center mt-8">
+              <button onClick={goToWriteFromFragment} className="text-sm" style={{ color: s.accent }}>
+                想多写几句？去写日记 →
+              </button>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    return (
+      <div className="max-w-xl mx-auto px-6 pt-16 pb-10">
+        <p className="text-center text-xs tracking-widest mb-2" style={{ color: s.t3 }}>{dateStr} · {dayStr}</p>
+        <h1 className="text-center text-2xl font-light mb-12" style={{ color: s.t1 }}>{getGreeting()}</h1>
+        <p className="text-center text-sm font-light mb-14" style={{ color: s.t3 }}>{prompt}</p>
+        <div className="space-y-3 mb-12">
+          <button onClick={startWrite} className="w-full py-4 rounded-2xl text-sm" style={{ background: s.accent, color: '#fff' }}>
+            写日记
+          </button>
+          <button onClick={() => setView('fragment')} className="w-full py-4 rounded-2xl text-sm"
+            style={{ background: s.card, border: `1px solid ${s.border}`, color: s.t2, boxShadow: s.shadow }}>
+            随手记一句
+          </button>
+        </div>
+        <div className="text-center">
+          <span className="text-xs" style={{ color: s.t3 }}>已记录 {Object.keys(entries).length} 篇日记</span>
         </div>
       </div>
-    </div>
-  );
-}
-
-function WritePage({onSave,editEntry,onCancel}){
-  const[mood,setMood]=useState(editEntry?editEntry.mood:null);
-  const[content,setContent]=useState(editEntry?editEntry.content:'');
-  const[date,setDate]=useState(editEntry?editEntry.date:getToday());
-  const handleSave=()=>{
-    if(!mood){alert('请选择今天的心情');return}
-    if(!content.trim()){alert('请写点什么吧');return}
-    onSave({id:editEntry?editEntry.id:Date.now(),date,mood,content:content.trim()});
+    );
   };
-  return(
-    <div className="page">
-      <div className="header"><h1>{editEntry?'✏️ 编辑日记':'✍️ 写日记'}</h1><p>记录此刻的心情</p></div>
-      <div className="stat-card">
-        <h3>📅 日期</h3>
-        <input type="date" value={date} onChange={e=>setDate(e.target.value)} style={{width:'100%',padding:'10px 14px',borderRadius:12,border:'2px solid var(--border)',fontSize:15,fontFamily:'inherit',outline:'none',background:'var(--bg)'}}/>
-      </div>
-      <div className="stat-card">
-        <h3>今天的心情是？</h3>
-        <div className="mood-selector">
-          {MOODS.map(m=><button key={m.label} className={`mood-option ${mood&&mood.label===m.label?'selected':''}`} onClick={()=>setMood(m)}><span className="mood-emoji">{m.emoji}</span><span className="mood-label">{m.label}</span></button>)}
-        </div>
-      </div>
-      <div className="stat-card">
-        <h3>写点什么吧...</h3>
-        <textarea className="diary-textarea" value={content} onChange={e=>setContent(e.target.value)} placeholder="今天发生了什么？有什么想记录的？"/>
-      </div>
-      <button className="btn btn-primary" onClick={handleSave}>{editEntry?'保存修改':'保存日记'} 💾</button>
-      {editEntry&&<button className="btn btn-secondary" onClick={onCancel}>取消</button>}
+
+  return (
+    <div className="min-h-screen pb-20" style={{ background: s.bg }}>
+      <AnimatePresence>
+        {showExportModal && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-50 flex items-end justify-center" onClick={() => setShowExportModal(false)}>
+            <div className="absolute inset-0" style={{ background: 'rgba(44,42,39,0.25)' }} />
+            <motion.div initial={{ y: 100 }} animate={{ y: 0 }} exit={{ y: 100 }}
+              transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
+              className="relative w-full max-w-lg rounded-t-3xl p-6 pb-10"
+              style={{ background: s.bg }} onClick={(e) => e.stopPropagation()}>
+              <div className="w-8 h-1 rounded-full mx-auto mb-6" style={{ background: s.border }} />
+              <p className="text-sm mb-5 text-center" style={{ color: s.t1 }}>选择导出格式</p>
+              <div className="space-y-2">
+                <button onClick={() => exportAs('md')} className="w-full py-3.5 rounded-xl text-sm"
+                  style={{ background: s.card, border: `1px solid ${s.border}`, color: s.t1 }}>
+                  Markdown (.md)
+                </button>
+                <button onClick={() => exportAs('txt')} className="w-full py-3.5 rounded-xl text-sm"
+                  style={{ background: s.card, border: `1px solid ${s.border}`, color: s.t1 }}>
+                  纯文本 (.txt)
+                </button>
+              </div>
+              <button onClick={() => setShowExportModal(false)} className="w-full py-3.5 rounded-xl text-sm mt-3" style={{ color: s.t3 }}>
+                取消
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence mode="wait">
+        <motion.div key={viewKey}
+          initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
+          transition={{ duration: 0.25, ease: [0.25, 0.1, 0.25, 1] }}>
+          {renderView()}
+        </motion.div>
+      </AnimatePresence>
+
+      <Nav />
     </div>
   );
 }
-
-function StatsPage({entries}){
-  const stats=useMemo(()=>{
-    const counts={};MOODS.forEach(m=>{counts[m.label]=0});
-    entries.forEach(e=>{if(counts[e.mood.label]!==undefined)counts[e.mood.label]++});
-    const max=Math.max(...Object.values(counts),1);
-    return{counts,max};
-  },[entries]);
-  const thisMonth=useMemo(()=>{const n=new Date();return entries.filter(e=>{const d=new Date(e.date);return d.getFullYear()===n.getFullYear()&&d.getMonth()===n.getMonth()}).length},[entries]);
-  const avgLen=useMemo(()=>{if(!entries.length)return 0;return Math.round(entries.reduce((s,e)=>s+e.content.length,0)/entries.length)},[entries]);
-
-  return(
-    <div className="page">
-      <div className="header"><h1>📊 统计</h1><p>回顾你的心情旅程</p></div>
-      <div className="stat-grid">
-        <div className="stat-card"><div className="stat-number">{entries.length}</div><div className="stat-label">总日记数</div></div>
-        <div className="stat-card"><div className="stat-number">{thisMonth}</div><div className="stat-label">本月日记</div></div>
-        <div className="stat-card"><div className="stat-number">{avgLen}</div><div className="stat-label">平均字数</div></div>
-        <div className="stat-card"><div className="stat-number" style={{fontSize:28}}>{entries.length>0?MOODS.reduce((best,m)=>(stats.counts[m.label]||0)>(stats.counts[best.label]||0)?m:best).emoji:'—'}</div><div className="stat-label">最常心情</div></div>
-      </div>
-      <div className="stat-card">
-        <h3>心情分布</h3>
-        <div className="stat-bar-container">
-          {MOODS.map(m=><div className="stat-bar-row" key={m.label}><span className="stat-bar-emoji">{m.emoji}</span><div className="stat-bar-track"><div className="stat-bar-fill" style={{width:`${Math.max((stats.counts[m.label]/stats.max)*100,stats.counts[m.label]>0?15:0)}%`,background:m.color}}>{stats.counts[m.label]>0?stats.counts[m.label]:''}</div></div></div>)}
-        </div>
-      </div>
-      {entries.length===0&&<div className="empty"><div className="empty-icon">📈</div><p>写几篇日记后就能看到统计啦</p></div>}
-    </div>
-  );
-}
-
-function DetailModal({entry,onClose,onEdit,onDelete}){
-  if(!entry)return null;
-  return(
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={e=>e.stopPropagation()}>
-        <button className="modal-close" onClick={onClose}>✕</button>
-        <div className="modal-mood">{entry.mood.emoji}</div>
-        <div className="modal-date">{formatDate(entry.date)} · {entry.mood.label}</div>
-        <div className="modal-text">{entry.content}</div>
-        <div className="modal-actions">
-          <button className="btn btn-primary" onClick={()=>onEdit(entry)}>✏️ 编辑</button>
-          <button className="btn btn-danger" onClick={()=>{if(confirm('确定要删除这篇日记吗？'))onDelete(entry.id)}}>🗑️ 删除</button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function App(){
-  const[page,setPage]=useState('home');
-  const[entries,setEntries]=useState([]);
-  const[viewEntry,setViewEntry]=useState(null);
-  const[editEntry,setEditEntry]=useState(null);
-
-  useEffect(()=>{const s=localStorage.getItem('mood-diary-entries');if(s)try{setEntries(JSON.parse(s))}catch(e){}},[]);
-  useEffect(()=>{localStorage.setItem('mood-diary-entries',JSON.stringify(entries))},[entries]);
-
-  const handleSave=(entry)=>{
-    setEntries(prev=>{const i=prev.findIndex(e=>e.id===entry.id);if(i>=0){const u=[...prev];u[i]=entry;return u}return[...prev,entry]});
-    setEditEntry(null);setPage('home');
-  };
-  const handleDelete=(id)=>{setEntries(prev=>prev.filter(e=>e.id!==id));setViewEntry(null)};
-  const handleEdit=(entry)=>{setViewEntry(null);setEditEntry(entry);setPage('write')};
-  const goWrite=()=>{setEditEntry(null);setPage('write')};
-
-  return(
-    <div>
-      {page==='home'&&<HomePage entries={entries} onView={setViewEntry} onWrite={goWrite}/>}
-      {page==='calendar'&&<CalendarPage entries={entries} onView={setViewEntry}/>}
-      {page==='write'&&<WritePage onSave={handleSave} editEntry={editEntry} onCancel={()=>{setEditEntry(null);setPage('home')}}/>}
-      {page==='stats'&&<StatsPage entries={entries}/>}
-      {viewEntry&&<DetailModal entry={viewEntry} onClose={()=>setViewEntry(null)} onEdit={handleEdit} onDelete={handleDelete}/>}
-      <nav className="nav">
-        <button className={`nav-item ${page==='home'?'active':''}`} onClick={()=>setPage('home')}><span className="nav-icon">🏠</span><span>首页</span></button>
-        <button className={`nav-item ${page==='calendar'?'active':''}`} onClick={()=>setPage('calendar')}><span className="nav-icon">📅</span><span>日历</span></button>
-        <button className={`nav-item ${page==='write'?'active':''}`} onClick={goWrite}><span className="nav-icon">✍️</span><span>写日记</span></button>
-        <button className={`nav-item ${page==='stats'?'active':''}`} onClick={()=>setPage('stats')}><span className="nav-icon">📊</span><span>统计</span></button>
-      </nav>
-    </div>
-  );
-}
-
-const root=ReactDOM.createRoot(document.getElementById('root'));
-root.render(<App/>);
-</script>
-</body>
-</html>
